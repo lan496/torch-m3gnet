@@ -134,4 +134,5 @@ nequip/
 gh-pages
 gh-pages.pub
 
+*.sif
 docs_build/
