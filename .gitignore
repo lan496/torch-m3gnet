@@ -130,6 +130,8 @@ dmypy.json
 
 m3gnet/
 nequip/
+MatDeepLearn/
+charge_transfer_nnp/
 
 gh-pages
 gh-pages.pub

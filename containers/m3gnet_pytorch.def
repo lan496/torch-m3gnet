@@ -1,0 +1,58 @@
+BootStrap: docker
+From: pytorch/pytorch:1.12.0-cuda11.3-cudnn8-devel
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -y
+    apt-get upgrade -y
+    apt-get install -y --no-install-recommends --fix-missing \
+        make \
+        cmake \
+        gcc \
+        g++ \
+        libboost-all-dev \
+        bc \
+        libomp-dev \
+        build-essential \
+        libssl-dev \
+        zlib1g-dev \
+        libbz2-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        wget \
+        curl \
+        llvm \
+        libncurses5-dev \
+        xz-utils \
+        tk-dev \
+        libxml2-dev \
+        libxmlsec1-dev \
+        libffi-dev \
+        liblzma-dev \
+        git \
+        apt-transport-https \
+        ca-certificates \
+        gnupg \
+        vim
+    rm -rf /var/lib/apt/lists/*
+
+    # pyenv
+    PYTHON_VERSION=3.10.4
+    export HOME=/root
+    export PYENV_ROOT=$HOME/.pyenv
+    export PATH=$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH
+    git clone https://github.com/pyenv/pyenv.git $PYENV_ROOT
+    echo 'eval "$(pyenv init -)"' >> ~/.bashrc && eval "$(pyenv init -)"
+    pyenv install ${PYTHON_VERSION} && \
+        pyenv global ${PYTHON_VERSION}
+    pyenv rehash
+    python -m pip install --upgrade pip
+
+    # Install dependencies
+    pip install torch-scatter torch-sparse torch-cluster torch-spline-conv torch-geometric -f https://data.pyg.org/whl/torch-1.12.0+cu113.html
+    python -m pip install pymatgen==2022.7.25 cython==0.29.30
+
+%environment
+    export LC_ALL=C
+    export PYENV_ROOT=$HOME/.pyenv
+    export PATH=$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH

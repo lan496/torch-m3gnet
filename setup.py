@@ -9,6 +9,11 @@ REQUIRED = [
     "setuptools_scm",
     "wheel",
     "typing_extensions",
+    "torch>=1.12.0",
+    "torch-scatter",
+    "torch-sparse",
+    "torch-spline-conv",
+    "torch-geometric",
 ]
 
 EXTRAS = {
