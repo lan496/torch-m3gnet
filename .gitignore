@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+m3gnet/
+nequip/
+
+gh-pages
+gh-pages.pub
+
+docs_build/
