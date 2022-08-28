@@ -1,6 +1,11 @@
 # torch-m3gnet
 PyTorch implementation of M3GNet
 
+## Limitations
+
+- Only support structures with PBC
+- No support: `state`, `MaterialGraph.phi`
+
 ## Installation
 
 ### Local
@@ -36,3 +41,4 @@ singularity run --nv tensorflow.sif
 - NequIP <https://github.com/mir-group/nequip>
 - MatDeepLearn <https://github.com/vxfung/MatDeepLearn>
 - change_transfer_nnp <https://github.com/pfnet-research/charge_transfer_nnp>
+- nn-template <https://github.com/grok-ai/nn-template>

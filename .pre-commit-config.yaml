@@ -34,18 +34,6 @@ repos:
       - id: isort
         name: isort (python)
         args: ["--profile", "black"]
-  # Upgrade syntax
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v2.37.3
-    hooks:
-      - id: pyupgrade
-  # Docstring
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.1.1
-    hooks:
-    - id: pydocstyle
-      additional_dependencies: ["toml"]
-      files: ^src/torch_m3gnet/
   # Notebook
   - repo: https://github.com/nbQA-dev/nbQA
     rev: 1.4.0

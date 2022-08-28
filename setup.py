@@ -9,17 +9,20 @@ REQUIRED = [
     "setuptools_scm",
     "wheel",
     "typing_extensions",
+    "torchtyping==0.1.4",
     "torch>=1.12.0",
     "torch-scatter",
     "torch-sparse",
     "torch-spline-conv",
     "torch-geometric",
+    "pymatgen>=2022.7.25",
 ]
 
 EXTRAS = {
     "dev": [
         "pytest==7.1.2",
         # "pytest-cov==3.0.0",
+        "typeguard==2.13.3",
         "pre-commit",
         "black",
         "mypy",

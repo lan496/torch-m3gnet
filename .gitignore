@@ -128,10 +128,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-m3gnet/
-nequip/
-MatDeepLearn/
-charge_transfer_nnp/
+third_party/
 
 gh-pages
 gh-pages.pub

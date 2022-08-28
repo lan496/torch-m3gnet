@@ -1,9 +1,8 @@
 # Adapted from https://github.com/materialsvirtuallab/m3gnet#structure-relaxation
 import warnings
 
-from pymatgen.core import Lattice, Structure
-
 from m3gnet.models import Relaxer
+from pymatgen.core import Lattice, Structure
 
 for category in (UserWarning, DeprecationWarning):
     warnings.filterwarnings("ignore", category=category, module="tensorflow")
