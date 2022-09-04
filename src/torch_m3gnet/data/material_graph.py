@@ -6,6 +6,9 @@ import torch
 from pymatgen.core import Structure
 from torch_geometric.data import Data
 from torchtyping import TensorType  # type: ignore
+from typing_extensions import TypeAlias
+
+from torch_m3gnet.data import MaterialGraphKey
 
 
 class MaterialGraph(Data):
@@ -26,7 +29,7 @@ class MaterialGraph(Data):
         Distance of each edge
     edge_cell_shift: (num_edges, 3) torch.int
         Unit-cell vector from source node to destination node
-    num_triple_ij: (num_edges, )
+    num_triplet_ij: (num_edges, )
         Number of triplets containing nodes in each edge
 
     triplet_edge_index: (2, num_triplets) torch.long
@@ -50,14 +53,12 @@ class MaterialGraph(Data):
         self,
         x: TensorType["num_nodes", "num_node_features"] | None = None,  # type: ignore # noqa: F821
         pos: TensorType["num_nodes", 3] | None = None,  # type: ignore # noqa: F821
-        num_triple_i: TensorType["num_nodes", torch.int] | None = None,  # type: ignore # noqa: F821
+        num_triplet_i: TensorType["num_nodes", torch.int] | None = None,  # type: ignore # noqa: F821
         edge_index: TensorType[2, "num_edges", torch.long] | None = None,  # type: ignore # noqa: F821
         edge_attr: TensorType["num_edges", "num_edge_features"] | None = None,  # type: ignore # noqa: F821
-        edge_weights: TensorType["num_edges"] | None = None,  # type: ignore # noqa: F821
         edge_cell_shift: TensorType["num_edges", 3, torch.int] | None = None,  # type: ignore # noqa: F821
-        num_triple_ij: TensorType["num_edges", torch.int] | None = None,  # type: ignore # noqa: F821
+        num_triplet_ij: TensorType["num_edges", torch.int] | None = None,  # type: ignore # noqa: F821
         triplet_edge_index: TensorType[2, "num_triplets", torch.long] | None = None,  # type: ignore # noqa: F821
-        triplet_cos_angles: TensorType["num_triplets"] | None = None,  # type: ignore # noqa: F821
         lattice: TensorType[3, 3] | None = None,
     ):
         num_nodes = pos.size(0) if pos is not None else 0
@@ -71,30 +72,41 @@ class MaterialGraph(Data):
         super().__init__(
             x=x,
             pos=pos,
-            num_triple_i=num_triple_i,
+            num_triplet_i=num_triplet_i,
             edge_index=edge_index,
             edge_attr=edge_attr,
-            edge_weights=edge_weights,
             edge_cell_shift=edge_cell_shift,
-            num_triple_ij=num_triple_ij,
+            num_triplet_ij=num_triplet_ij,
             triplet_edge_index=triplet_edge_index,
-            triplet_cos_angles=triplet_cos_angles,
             lattice=lattice,
             num_nodes=num_nodes,
             num_edges=num_edges,
             num_triplets=num_triplets,
             num_node_features=num_node_features,
             num_edge_features=num_edge_features,
+            # Derived properties
+            edge_weights=None,
+            triplet_angles=None,
         )
 
     def __cat_dim__(self, key: str, value: Any, *args: Any, **kwargs: Any):
-        if key in ["edge_index", "triplet_edge_index"]:
+        if key in [MaterialGraphKey.EDGE_INDEX, MaterialGraphKey.TRIPLET_EDGE_INDEX]:
             return 1
-        elif key in ["lattice"]:
+        elif key in [MaterialGraphKey.LATTICE]:
             # graph-level properties and so need a new batch dimension
             return None
         else:
             return 0  # cat along node/edge dimension
+
+    def __inc__(self, key: str, value: Any, *args, **kwargs) -> Any:
+        if key == MaterialGraphKey.BATCH:
+            return int(value.max()) + 1
+        elif key == MaterialGraphKey.EDGE_INDEX:
+            return self.num_nodes
+        elif key == MaterialGraphKey.TRIPLET_EDGE_INDEX:
+            return self.num_edges
+        else:
+            return 0
 
     @classmethod
     def from_structure(
@@ -109,7 +121,6 @@ class MaterialGraph(Data):
         edge_index, edge_cell_shift, distances = get_all_neighbors_with_cell_shifts(
             structure, cutoff
         )
-        edge_weights = distances
 
         # Initalize edge features by edge distances
         edge_attr = distances[:, None]
@@ -119,24 +130,19 @@ class MaterialGraph(Data):
         if threebody_cutoff > cutoff:
             raise ValueError("Three body cutoff raidus should be smaller than two body.")
         num_nodes = len(structure)
-        triplet_edge_index, num_triple_i, num_triple_ij = compute_threebody(
+        triplet_edge_index, num_triplet_i, num_triplet_ij = compute_threebody(
             num_nodes, edge_index, distances, threebody_cutoff
         )
-
-        pair_vecs = get_pair_vectors(lattice, pos, edge_index, edge_cell_shift)
-        triplet_cos_angles = compute_angles(pair_vecs, distances, triplet_edge_index)
 
         return cls(
             x=x,
             pos=pos,
-            num_triple_i=num_triple_i,
+            num_triplet_i=num_triplet_i,
             edge_index=edge_index,
             edge_attr=edge_attr,
-            edge_weights=edge_weights,
             edge_cell_shift=edge_cell_shift,
-            num_triple_ij=num_triple_ij,
+            num_triplet_ij=num_triplet_ij,
             triplet_edge_index=triplet_edge_index,
-            triplet_cos_angles=triplet_cos_angles,
             lattice=lattice,
         )
 
@@ -186,9 +192,9 @@ def compute_threebody(
         triplet_edge_index[:, f] = [e1, e2] form the `f`-th triplet.
         edge_index[:, e1] = [i, j], edge_index[:, e2] = [i, k]
         Then, [i, j, k] is nodes of the `f`-th triplet.
-    num_triple_i: (num_nodes, ) torch.int
+    num_triplet_i: (num_nodes, ) torch.int
         Number of triplets containing each node
-    num_triple_ij: (num_edges, ) torch.int
+    num_triplet_ij: (num_edges, ) torch.int
         Number of triplets containing nodes in each edge
 
     Note
@@ -205,16 +211,16 @@ def compute_threebody(
     degrees: TensorType["num_nodes"] = torch.bincount(
         valid_edge_index[1], minlength=num_nodes
     )  # type: ignore # noqa: F821
-    num_triple_i = degrees * (degrees - 1)
+    num_triplet_i = degrees * (degrees - 1)
 
-    num_triplet = torch.sum(num_triple_i)
-    num_triple_ij_ = torch.zeros(valid_edge_index.size(1), dtype=torch.int)
+    num_triplet = torch.sum(num_triplet_i)
+    num_triplet_ij_ = torch.zeros(valid_edge_index.size(1), dtype=torch.int)
     triplet_edge_index = torch.empty((2, num_triplet), dtype=torch.long)
     offset = 0
     idx = 0
     for i in range(num_nodes):
         for j in range(degrees[i]):
-            num_triple_ij_[offset + j] = degrees[i] - 1
+            num_triplet_ij_[offset + j] = degrees[i] - 1
             for k in range(degrees[i]):
                 if j == k:
                     continue
@@ -224,35 +230,11 @@ def compute_threebody(
         offset += degrees[i]
     triplet_edge_index = original_indices[triplet_edge_index]
 
-    num_triple_ij = torch.zeros(num_edges, dtype=torch.int)
-    num_triple_ij[valid_edge_index_mapping] = num_triple_ij_
+    num_triplet_ij = torch.zeros(num_edges, dtype=torch.int)
+    num_triplet_ij[valid_edge_index_mapping] = num_triplet_ij_
 
-    return triplet_edge_index, num_triple_i, num_triple_ij
-
-
-def compute_angles(
-    pair_vecs: TensorType["num_edges", 3],  # type: ignore # noqa: F821
-    distances: TensorType["num_edges"],  # type: ignore # noqa: F821
-    triplet_edge_index: TensorType[2, num_triplets, torch.long],  # type: ignore # noqa: F821
-) -> TensorType["num_triplets"]:  # type: ignore # noqa: F821
-    """Compute angle between j-i-k."""
-    vij: TensorType["num_triplets", 3] = pair_vecs[triplet_edge_index[0]]  # type: ignore # noqa: F821
-    vik: TensorType["num_triplets", 3] = pair_vecs[triplet_edge_index[1]]  # type: ignore # noqa: F821
-    rij: TensorType["num_triplets"] = distances[triplet_edge_index[0]]  # type: ignore # noqa: F821
-    rik: TensorType["num_triplets"] = distances[triplet_edge_index[1]]  # type: ignore # noqa: F821
-    cos_jik: TensorType["num_triplets"] = torch.sum(vij * vik, axis=1) / (rij * rik)  # type: ignore # noqa: F821
-    return cos_jik
+    return triplet_edge_index, num_triplet_i, num_triplet_ij
 
 
-def get_pair_vectors(
-    lattice: TensorType[3, 3],
-    pos: TensorType["num_nodes", 3],  # type: ignore # noqa: F821
-    edge_index: TensorType[2, "num_edges", torch.long],  # type: ignore # noqa: F821
-    edge_cell_shift: TensorType["num_edges", 3, torch.int],  # type: ignore # noqa: F821
-) -> TensorType["num_edges", 3]:  # type: ignore # noqa: F821
-    """Return displacements from site-i to site-j."""
-    shift_vecs: TensorType["num_edegs", 3] = (  # type: ignore # noqa: F821
-        edge_cell_shift.to(torch.float) @ lattice
-    )
-    pair_vecs = pos[edge_index[1]] + shift_vecs - pos[edge_index[0]]
-    return pair_vecs
+# Stab for Batch(_base_cls=MaterialGraph)
+BatchMaterialGraph: TypeAlias = Any
