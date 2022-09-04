@@ -18,8 +18,8 @@ class DistanceAndAngle(torch.nn.Module):
 
         # Pair distance
         pair_vecs: TensorType["num_edges", 3] = self._get_pair_vectors(batch, lattice, pos, edge_index, edge_cell_shift)  # type: ignore # noqa: F821
+        distances: TensorType["num_edges"] = torch.linalg.norm(pair_vecs, dim=1)  # type: ignore # noqa: F821
         vij: TensorType["num_triplets", 3] = pair_vecs[triplet_edge_index[0]]  # type: ignore # noqa: F821
-        distances: TensorType["num_edges"] = torch.linalg.norm(vij, dim=1)  # type: ignore # noqa: F821
 
         # Triplet angle
         vik: TensorType["num_triplets", 3] = pair_vecs[triplet_edge_index[1]]  # type: ignore # noqa: F821
