@@ -6,7 +6,12 @@ from torch_m3gnet.data.material_graph import BatchMaterialGraph
 
 
 class DistanceAndAngle(torch.nn.Module):
-    """Compute distance between i-j and angle between j-i-k."""
+    """Compute distance between i-j and angle between j-i-k.
+
+    Forward function supplies the following attributes:
+        - MaterialGraphKey.EDGE_DISTANCES
+        - MaterialGraphKey.TRIPLET_ANGLES
+    """
 
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         batch = graph[MaterialGraphKey.BATCH]
@@ -27,7 +32,7 @@ class DistanceAndAngle(torch.nn.Module):
         rik: TensorType["num_triplets"] = distances[triplet_edge_index[1]]  # type: ignore # noqa: F821
         cos_jik: TensorType["num_triplets"] = torch.sum(vij * vik, axis=1) / (rij * rik)  # type: ignore # noqa: F821
 
-        graph[MaterialGraphKey.EDGE_WEIGHTS] = distances
+        graph[MaterialGraphKey.EDGE_DISTANCES] = distances
         graph[MaterialGraphKey.TRIPLET_ANGLES] = cos_jik
 
         return graph

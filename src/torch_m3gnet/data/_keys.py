@@ -10,10 +10,9 @@ LATTICE = "lattice"
 NUM_NODES = "num_nodes"
 NUM_EDGES = "num_edges"
 NUM_TRIPLETS = "num_triplets"
-NUM_NODE_FEATURES = "num_node_features"
-NUM_EDGE_FEATURES = "num_edge_features"
 
 # Derived property
+EDGE_DISTANCES = "edge_distances"
 EDGE_WEIGHTS = "edge_weights"
 TRIPLET_ANGLES = "triplet_angles"
 

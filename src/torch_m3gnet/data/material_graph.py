@@ -55,7 +55,6 @@ class MaterialGraph(Data):
         pos: TensorType["num_nodes", 3] | None = None,  # type: ignore # noqa: F821
         num_triplet_i: TensorType["num_nodes", torch.int] | None = None,  # type: ignore # noqa: F821
         edge_index: TensorType[2, "num_edges", torch.long] | None = None,  # type: ignore # noqa: F821
-        edge_attr: TensorType["num_edges", "num_edge_features"] | None = None,  # type: ignore # noqa: F821
         edge_cell_shift: TensorType["num_edges", 3, torch.int] | None = None,  # type: ignore # noqa: F821
         num_triplet_ij: TensorType["num_edges", torch.int] | None = None,  # type: ignore # noqa: F821
         triplet_edge_index: TensorType[2, "num_triplets", torch.long] | None = None,  # type: ignore # noqa: F821
@@ -64,8 +63,6 @@ class MaterialGraph(Data):
         num_nodes = pos.size(0) if pos is not None else 0
         num_edges = edge_index.size(1) if edge_index is not None else 0
         num_triplets = triplet_edge_index.size(1) if triplet_edge_index is not None else 0
-        num_node_features = x.size(1) if x is not None else 0
-        num_edge_features = edge_attr.size(1) if edge_attr is not None else 0
 
         # TODO: add "state" key
 
@@ -74,7 +71,6 @@ class MaterialGraph(Data):
             pos=pos,
             num_triplet_i=num_triplet_i,
             edge_index=edge_index,
-            edge_attr=edge_attr,
             edge_cell_shift=edge_cell_shift,
             num_triplet_ij=num_triplet_ij,
             triplet_edge_index=triplet_edge_index,
@@ -82,10 +78,10 @@ class MaterialGraph(Data):
             num_nodes=num_nodes,
             num_edges=num_edges,
             num_triplets=num_triplets,
-            num_node_features=num_node_features,
-            num_edge_features=num_edge_features,
             # Derived properties
+            edge_distances=None,
             edge_weights=None,
+            edge_attr=None,
             triplet_angles=None,
         )
 
@@ -122,8 +118,6 @@ class MaterialGraph(Data):
             structure, cutoff
         )
 
-        # Initalize edge features by edge distances
-        edge_attr = distances[:, None]
         # Initialize node features by atomic numbers
         x = torch.as_tensor([site.specie.Z for site in structure], dtype=torch.float)[:, None]
 
@@ -139,7 +133,6 @@ class MaterialGraph(Data):
             pos=pos,
             num_triplet_i=num_triplet_i,
             edge_index=edge_index,
-            edge_attr=edge_attr,
             edge_cell_shift=edge_cell_shift,
             num_triplet_ij=num_triplet_ij,
             triplet_edge_index=triplet_edge_index,

@@ -8,6 +8,7 @@ from torch_geometric.data import Batch
 
 from torch_m3gnet.data import MaterialGraphKey
 from torch_m3gnet.data.material_graph import BatchMaterialGraph, MaterialGraph
+from torch_m3gnet.nn.featurizer import EdgeFeaturizer
 from torch_m3gnet.nn.invariant import DistanceAndAngle
 
 
@@ -19,8 +20,10 @@ def test_distance_angle(graph: BatchMaterialGraph, datum: list[MaterialGraph]):
     subgraphs = [model(subgraph) for subgraph in subgraphs]
 
     # Check distances in batch
-    distances = graph[MaterialGraphKey.EDGE_WEIGHTS]
-    distances2 = torch.concat([subgraph[MaterialGraphKey.EDGE_WEIGHTS] for subgraph in subgraphs])
+    distances = graph[MaterialGraphKey.EDGE_DISTANCES]
+    distances2 = torch.concat(
+        [subgraph[MaterialGraphKey.EDGE_DISTANCES] for subgraph in subgraphs]
+    )
     torch.testing.assert_close(distances, distances2)
 
     # Check angles in batch
@@ -71,10 +74,21 @@ def test_invariance(lattice_coords_types):
     graph2 = model(graph2)
 
     torch.testing.assert_close(
-        torch.sort(graph[MaterialGraphKey.EDGE_WEIGHTS])[0],
-        torch.sort(graph2[MaterialGraphKey.EDGE_WEIGHTS])[0],
+        torch.sort(graph[MaterialGraphKey.EDGE_DISTANCES])[0],
+        torch.sort(graph2[MaterialGraphKey.EDGE_DISTANCES])[0],
     )
     torch.testing.assert_close(
         torch.sort(graph[MaterialGraphKey.TRIPLET_ANGLES])[0],
         torch.sort(graph2[MaterialGraphKey.TRIPLET_ANGLES])[0],
     )
+
+
+def test_edge_featurizer(graph: BatchMaterialGraph):
+    degree = 3
+    model = torch.nn.Sequential(
+        DistanceAndAngle(),
+        EdgeFeaturizer(degree=degree),
+    )
+    graph = model(graph)
+    assert not torch.all(torch.isnan(graph[MaterialGraphKey.EDGE_WEIGHTS]))
+    assert graph[MaterialGraphKey.EDGE_WEIGHTS].size(1) == degree
