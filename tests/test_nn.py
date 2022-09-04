@@ -8,7 +8,7 @@ from torch_geometric.data import Batch
 
 from torch_m3gnet.data import MaterialGraphKey
 from torch_m3gnet.data.material_graph import BatchMaterialGraph, MaterialGraph
-from torch_m3gnet.nn.featurizer import EdgeFeaturizer
+from torch_m3gnet.nn.featurizer import AtomFeaturizer, EdgeFeaturizer
 from torch_m3gnet.nn.invariant import DistanceAndAngle
 
 
@@ -87,8 +87,15 @@ def test_edge_featurizer(graph: BatchMaterialGraph):
     degree = 3
     model = torch.nn.Sequential(
         DistanceAndAngle(),
-        EdgeFeaturizer(degree=degree),
+        EdgeFeaturizer(degree=degree, cutoff=5.0),
     )
     graph = model(graph)
     assert not torch.all(torch.isnan(graph[MaterialGraphKey.EDGE_WEIGHTS]))
     assert graph[MaterialGraphKey.EDGE_WEIGHTS].size(1) == degree
+
+
+def test_atom_featurizer(graph: BatchMaterialGraph):
+    embedding_dim = 64
+    model = AtomFeaturizer(num_types=15, embedding_dim=embedding_dim)
+    graph = model(graph)
+    assert graph[MaterialGraphKey.NODE_FEATURES].size(1) == embedding_dim

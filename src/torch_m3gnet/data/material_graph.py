@@ -19,6 +19,8 @@ class MaterialGraph(Data):
         Node features
     pos: (num_nodes, 3) torch.float
         Cartesian coordinates
+    atom_types: (num_nodes, ) torch.long
+        Atomic numbers
     num_triple_i: (num_nodes, ) torch.int
         Number of triplets containing each node
 
@@ -51,8 +53,8 @@ class MaterialGraph(Data):
 
     def __init__(
         self,
-        x: TensorType["num_nodes", "num_node_features"] | None = None,  # type: ignore # noqa: F821
         pos: TensorType["num_nodes", 3] | None = None,  # type: ignore # noqa: F821
+        atom_types: TensorType["num_nodes", torch.long] | None = None,  # type: ignore # noqa: F821
         num_triplet_i: TensorType["num_nodes", torch.int] | None = None,  # type: ignore # noqa: F821
         edge_index: TensorType[2, "num_edges", torch.long] | None = None,  # type: ignore # noqa: F821
         edge_cell_shift: TensorType["num_edges", 3, torch.int] | None = None,  # type: ignore # noqa: F821
@@ -67,8 +69,8 @@ class MaterialGraph(Data):
         # TODO: add "state" key
 
         super().__init__(
-            x=x,
             pos=pos,
+            atom_types=atom_types,
             num_triplet_i=num_triplet_i,
             edge_index=edge_index,
             edge_cell_shift=edge_cell_shift,
@@ -80,9 +82,11 @@ class MaterialGraph(Data):
             num_triplets=num_triplets,
             # Derived properties
             edge_distances=None,
-            edge_weights=None,
-            edge_attr=None,
             triplet_angles=None,
+            edge_weights=None,
+            # Features
+            x=None,
+            edge_attr=None,
         )
 
     def __cat_dim__(self, key: str, value: Any, *args: Any, **kwargs: Any):
@@ -119,7 +123,7 @@ class MaterialGraph(Data):
         )
 
         # Initialize node features by atomic numbers
-        x = torch.as_tensor([site.specie.Z for site in structure], dtype=torch.float)[:, None]
+        atom_types = torch.as_tensor([site.specie.Z for site in structure], dtype=torch.long)
 
         if threebody_cutoff > cutoff:
             raise ValueError("Three body cutoff raidus should be smaller than two body.")
@@ -129,8 +133,8 @@ class MaterialGraph(Data):
         )
 
         return cls(
-            x=x,
             pos=pos,
+            atom_types=atom_types,
             num_triplet_i=num_triplet_i,
             edge_index=edge_index,
             edge_cell_shift=edge_cell_shift,

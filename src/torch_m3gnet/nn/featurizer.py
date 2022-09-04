@@ -6,6 +6,33 @@ from torch_m3gnet.data import MaterialGraphKey
 from torch_m3gnet.data.material_graph import BatchMaterialGraph
 
 
+class AtomFeaturizer(torch.nn.Module):
+    """Featurize atomic numbers.
+
+    Forward function supplies the following attributes:
+        - MaterialGraphKey.EDGE_WEIGHTS
+        - MaterialGraphKey.EDGE_ATTR
+    """
+
+    def __init__(self, num_types: int, embedding_dim: int):
+        super().__init__()
+
+        self._num_types = num_types
+
+        self.linear = torch.nn.Linear(num_types, embedding_dim, bias=False)
+
+    @property
+    def num_types(self) -> int:
+        return self._num_types
+
+    def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
+        atom_types = graph[MaterialGraphKey.ATOM_TYPES]
+        one_hot = torch.nn.functional.one_hot(atom_types, num_classes=self.num_types)
+        x = self.linear(one_hot.to(torch.float))
+        graph[MaterialGraphKey.NODE_FEATURES] = x
+        return graph
+
+
 class EdgeFeaturizer(torch.nn.Module):
     """Featurize edges by combination of spherical bessel functions.
 
@@ -14,7 +41,7 @@ class EdgeFeaturizer(torch.nn.Module):
         - MaterialGraphKey.EDGE_ATTR
     """
 
-    def __init__(self, degree: int, cutoff: float = 5.0):
+    def __init__(self, degree: int, cutoff: float):
         super().__init__()
 
         self._degree = degree

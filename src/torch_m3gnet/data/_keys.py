@@ -1,8 +1,7 @@
-NODE_FEATURES = "x"
 POS = "pos"
+ATOM_TYPES = "atom_types"
 NUM_TRIPLET_I = "num_triplet_i"
 EDGE_INDEX = "edge_index"
-EDGE_ATTR = "edge_attr"
 EDGE_CELL_SHIFT = "edge_cell_shift"
 NUM_TRIPLET_IJ = "num_triplet_ij"
 TRIPLET_EDGE_INDEX = "triplet_edge_index"
@@ -15,6 +14,10 @@ NUM_TRIPLETS = "num_triplets"
 EDGE_DISTANCES = "edge_distances"
 EDGE_WEIGHTS = "edge_weights"
 TRIPLET_ANGLES = "triplet_angles"
+
+# Features
+NODE_FEATURES = "x"
+EDGE_ATTR = "edge_attr"
 
 # BatchMaterialGraph
 BATCH = "batch"
