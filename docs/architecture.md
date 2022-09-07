@@ -36,6 +36,84 @@ h_{m}(r)
 
 {math}`m = n_{\max} l_{\max}`
 
+## Atom featurizer
+
+Embedding layer
+
+## Three-body to bond
+
+```{math}
+    \tilde{\mathbf{e}}_{ij}
+        &=
+        \mathcal{L}_{\mathrm{sigmoid}}(\mathbf{v}_{k})
+        \odot
+        \left(
+            \sum_{ k \in \mathcal{N}_{i} \backslash \{ j \} } j_{l}(z_{ln} \frac{r_{ik}}{r_{c}} ) Y_{l}^{0}(\theta_{jik})  f_{c}(r_{ij}) f_{c}(r_{ik})
+        \right)_{l=0, \dots, l_{\max}-1, n=0, \dots, n_{\max}-1} \\
+    \mathbf{e}_{ij}
+        &\leftarrow \mathbf{e}_{ij}
+            + \mathcal{L}_{\mathrm{swish}}(\tilde{\mathbf{e}}_{ij}) \odot \mathcal{L}_{\mathrm{sigmoid}}(\tilde{\mathbf{e}}_{ij}) \\
+```
+{math}`j_{l}` is the {math}`l`th spherical Bessel function with roots at {math}`z_{ln} \, (n=0, \dots, n_{\max}-1)`.
+{math}`Y_{l}^{0}` is the spherical harmonics with {math}`m=0`.
+{math}`\mathcal{L}_{\sigma}` is a one-layer perceptron with activation function {math}`\sigma`.
+
+Cutoff function
+```{math}
+    f_{c}(r)
+    = 1
+        - 6 \left( \frac{r}{r_{c}} \right)^{5}
+        + 15 \left( \frac{r}{r_{c}} \right)^{4}
+        - 10 \left( \frac{r}{r_{c}} \right)^{3}
+```
+
+### Spherical Bessel function
+
+The spherical Bessel function of the first kind
+```{math}
+  % DLMF 10.49.3
+  j_{0}(z) &= \frac{\sin z}{z} \\
+  j_{1}(z) &= \frac{\sin z}{z^{2}} - \frac{\cos z}{z} \\
+  j_{l+1}(z)
+    &= \frac{2l+1}{z} j_{l}(z) - j_{l-1}(z)
+    \quad (l \geq 1)
+    \quad (\mbox{DLMF 10.51.1}) \\
+  j_{n}(z) &\approx \frac{z^{n}}{(2n+1)!!} \quad (z \to 0) \\
+```
+
+The derivative of spherical Bessel function of the first kind
+```{math}
+  j_{0}'(z) &= -j_{1}(z) \\
+  j_{l}'(z)
+    &= j_{l-1}(z) - \frac{l+1}{z} j_{l}(z)
+    \quad (l \geq 1)
+    \quad (\mbox{DLMF 10.51.2}) \\
+```
+
+### Spherical harmonics with {math}`m=0`
+
+```{math}
+  Y_{l}^{0}(\theta)
+    &= \sqrt{ \frac{2l+1}{4\pi} } P_{l}^{(0)}(\cos \theta) \\
+  \frac{d }{d \theta} Y_{l}^{0}(\theta)
+    &= \sqrt{ \frac{2l+1}{4\pi} } \frac{d}{d \theta}  P_{l}^{(m)}(\cos \theta) \\
+```
+This definition adopts Condon-Shortley phase.
+
+Associated Legendre function
+```{math}
+  P_{0}^{(0)}(x) &= 1 \\
+  P_{l+1}^{(l+1)}(\cos \theta) &= -(2l + 1) \sin \theta P_{l}^{(l)}(\cos \theta) \quad (l \geq 0, 0 < \theta < \pi) \\
+  &(n - m + 2) P_{n+2}^{(m)}(x) - (2n+3) x P_{n+1}^{(m)}(x) + (n + m + 1) P_{n}^{(m)}(x) = 0 \\
+  &(n + 1) P_{n+1}^{(0)}(x) - (2n+1) x P_{n}^{(0)}(x) + n P_{n-1}^{(0)}(x) = 0
+```
+
+Derivative of associated Legendre functions
+```{math}
+  \frac{d}{d \theta} P_{n}^{(m)}(\cos \theta)
+    = -\frac{1}{\sin \theta} \left( (n+m) P_{n-1}^{(m)}(\cos \theta) - n \cos \theta P_{n}^{(m)}(\cos \theta) \right)
+```
+
 ## References
 ```{bibliography}
 :filter: docname in docnames

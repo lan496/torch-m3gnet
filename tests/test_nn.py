@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 import torch
 from numpy.typing import NDArray
 from pymatgen.core import Structure
+from torch.autograd import gradcheck
 from torch_geometric.data import Batch
 
 from torch_m3gnet.data import MaterialGraphKey
 from torch_m3gnet.data.material_graph import BatchMaterialGraph, MaterialGraph
 from torch_m3gnet.nn.featurizer import AtomFeaturizer, EdgeFeaturizer
+from torch_m3gnet.nn.interaction import spherical_bessel
 from torch_m3gnet.nn.invariant import DistanceAndAngle
 
 
@@ -99,3 +102,14 @@ def test_atom_featurizer(graph: BatchMaterialGraph):
     model = AtomFeaturizer(num_types=15, embedding_dim=embedding_dim)
     graph = model(graph)
     assert graph[MaterialGraphKey.NODE_FEATURES].size(1) == embedding_dim
+
+
+@pytest.mark.parametrize(
+    "order",
+    # [2],
+    [0, 1, 2, 3],
+)
+def test_spherical_bessel(order):
+    # Numerical grad near zero give doubtful value...
+    input = torch.linspace(1e-1, 10, steps=16, dtype=torch.float64, requires_grad=True)
+    assert gradcheck(spherical_bessel, (input, order), eps=1e-4)
