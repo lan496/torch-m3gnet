@@ -77,4 +77,37 @@ class SphericalBessel(torch.autograd.Function):
         return grad, None
 
 
+class LegendreCosPolynomial(torch.autograd.Function):
+    """Legendre polynomial P_{n}(cos x)."""
+
+    @staticmethod
+    def forward(ctx, input: torch.Tensor, order: int):
+        assert order >= 0
+
+        out = [torch.ones_like(input)]
+        if order >= 1:
+            out.append(input)
+
+            for n in range(1, order):
+                out.append(((2 * n + 1) * input * out[n] - n * out[n - 1]) / (n + 1))
+
+        out = torch.stack(out)
+
+        ctx.order = order
+        ctx.save_for_backward(input, out)
+        return out[-1]
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        input, out = ctx.saved_tensors
+        order = ctx.order
+
+        grad = [torch.zeros_like(grad_output)]
+        for n in range(1, order + 1):
+            grad.append((n * out[n - 1] + input * grad[n - 1]) * grad_output)
+
+        return grad[-1], None
+
+
 spherical_bessel = SphericalBessel.apply
+legendre_cos = LegendreCosPolynomial.apply

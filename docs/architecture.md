@@ -94,24 +94,24 @@ The derivative of spherical Bessel function of the first kind
 
 ```{math}
   Y_{l}^{0}(\theta)
-    &= \sqrt{ \frac{2l+1}{4\pi} } P_{l}^{(0)}(\cos \theta) \\
+    &= \sqrt{ \frac{2l+1}{4\pi} } P_{l}(\cos \theta) \\
   \frac{d }{d \theta} Y_{l}^{0}(\theta)
-    &= \sqrt{ \frac{2l+1}{4\pi} } \frac{d}{d \theta}  P_{l}^{(m)}(\cos \theta) \\
+    &= \sqrt{ \frac{2l+1}{4\pi} } \frac{d}{d \theta}  P_{l}(\cos \theta) \\
 ```
 This definition adopts Condon-Shortley phase.
 
-Associated Legendre function
+Legendre polynomial (DLMF 14.10.3)
 ```{math}
-  P_{0}^{(0)}(x) &= 1 \\
-  P_{l+1}^{(l+1)}(\cos \theta) &= -(2l + 1) \sin \theta P_{l}^{(l)}(\cos \theta) \quad (l \geq 0, 0 < \theta < \pi) \\
-  &(n - m + 2) P_{n+2}^{(m)}(x) - (2n+3) x P_{n+1}^{(m)}(x) + (n + m + 1) P_{n}^{(m)}(x) = 0 \\
-  &(n + 1) P_{n+1}^{(0)}(x) - (2n+1) x P_{n}^{(0)}(x) + n P_{n-1}^{(0)}(x) = 0
+  P_{0}(x) &= 1 \\
+  P_{1}(x) &= x \\
+  (n + 1) P_{n+1}(x) - (2n+1) x P_{n}(x) + n P_{n-1}(x) &= 0 \quad (n \geq 1)
 ```
 
-Derivative of associated Legendre functions
+Derivative of Legendre polynomial
 ```{math}
+  \frac{d}{d x} P_{n}(x) &= n P_{n-1}(x) + x \frac{d}{dx} P_{n-1}(x) \quad (n \geq 1) \\
   \frac{d}{d \theta} P_{n}^{(m)}(\cos \theta)
-    = -\frac{1}{\sin \theta} \left( (n+m) P_{n-1}^{(m)}(\cos \theta) - n \cos \theta P_{n}^{(m)}(\cos \theta) \right)
+    &= -\frac{1}{\sin \theta} \left( (n+m) P_{n-1}^{(m)}(\cos \theta) - n \cos \theta P_{n}^{(m)}(\cos \theta) \right) \\
 ```
 
 ## References
