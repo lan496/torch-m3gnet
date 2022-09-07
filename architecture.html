@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Network architecture &#8212; torch-m3gnet 0.1.dev11+g4ab5b7f</title>
+    <title>Network architecture &#8212; torch-m3gnet 0.1.dev14+gac69818</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -74,7 +74,7 @@
       
       
       
-      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev11+g4ab5b7f</h1>
+      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev14+gac69818</h1>
       
     </a>
 </div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
@@ -246,6 +246,31 @@ title="Print to PDF"
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#atom-featurizer">
+   Atom featurizer
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#three-body-to-bond">
+   Three-body to bond
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#spherical-bessel-function">
+     Spherical Bessel function
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#spherical-harmonics-with-m-0">
+     Spherical harmonics with
+     <span class="math notranslate nohighlight">
+      \(m=0\)
+     </span>
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#references">
    References
   </a>
@@ -278,6 +303,31 @@ title="Print to PDF"
   <a class="reference internal nav-link" href="#bond-featurizer">
    Bond featurizer
   </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#atom-featurizer">
+   Atom featurizer
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#three-body-to-bond">
+   Three-body to bond
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#spherical-bessel-function">
+     Spherical Bessel function
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#spherical-harmonics-with-m-0">
+     Spherical harmonics with
+     <span class="math notranslate nohighlight">
+      \(m=0\)
+     </span>
+    </a>
+   </li>
+  </ul>
  </li>
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#references">
@@ -325,6 +375,73 @@ h_{m}(r)
     &amp;= \frac{1}{\sqrt{d_{m}}} \left( f_{m}(r) + \sqrt{\frac{ e_{m} }{ d_{m-1} }} h_{m-1}(r) \right)
     \quad (m \geq 1) \\\end{split}\]</div>
 <p><span class="math notranslate nohighlight">\(m = n_{\max} l_{\max}\)</span></p>
+</section>
+<section id="atom-featurizer">
+<h2>Atom featurizer<a class="headerlink" href="#atom-featurizer" title="Permalink to this headline">#</a></h2>
+<p>Embedding layer</p>
+</section>
+<section id="three-body-to-bond">
+<h2>Three-body to bond<a class="headerlink" href="#three-body-to-bond" title="Permalink to this headline">#</a></h2>
+<div class="math notranslate nohighlight">
+\[\begin{split}    \tilde{\mathbf{e}}_{ij}
+        &amp;=
+        \mathcal{L}_{\mathrm{sigmoid}}(\mathbf{v}_{k})
+        \odot
+        \left(
+            \sum_{ k \in \mathcal{N}_{i} \backslash \{ j \} } j_{l}(z_{ln} \frac{r_{ik}}{r_{c}} ) Y_{l}^{0}(\theta_{jik})  f_{c}(r_{ij}) f_{c}(r_{ik})
+        \right)_{l=0, \dots, l_{\max}-1, n=0, \dots, n_{\max}-1} \\
+    \mathbf{e}_{ij}
+        &amp;\leftarrow \mathbf{e}_{ij}
+            + \mathcal{L}_{\mathrm{swish}}(\tilde{\mathbf{e}}_{ij}) \odot \mathcal{L}_{\mathrm{sigmoid}}(\tilde{\mathbf{e}}_{ij}) \\\end{split}\]</div>
+<p><span class="math notranslate nohighlight">\(j_{l}\)</span> is the <span class="math notranslate nohighlight">\(l\)</span>th spherical Bessel function with roots at <span class="math notranslate nohighlight">\(z_{ln} \, (n=0, \dots, n_{\max}-1)\)</span>.
+<span class="math notranslate nohighlight">\(Y_{l}^{0}\)</span> is the spherical harmonics with <span class="math notranslate nohighlight">\(m=0\)</span>.
+<span class="math notranslate nohighlight">\(\mathcal{L}_{\sigma}\)</span> is a one-layer perceptron with activation function <span class="math notranslate nohighlight">\(\sigma\)</span>.</p>
+<p>Cutoff function</p>
+<div class="math notranslate nohighlight">
+\[    f_{c}(r)
+    = 1
+        - 6 \left( \frac{r}{r_{c}} \right)^{5}
+        + 15 \left( \frac{r}{r_{c}} \right)^{4}
+        - 10 \left( \frac{r}{r_{c}} \right)^{3}\]</div>
+<section id="spherical-bessel-function">
+<h3>Spherical Bessel function<a class="headerlink" href="#spherical-bessel-function" title="Permalink to this headline">#</a></h3>
+<p>The spherical Bessel function of the first kind</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}  % DLMF 10.49.3
+  j_{0}(z) &amp;= \frac{\sin z}{z} \\
+  j_{1}(z) &amp;= \frac{\sin z}{z^{2}} - \frac{\cos z}{z} \\
+  j_{l+1}(z)
+    &amp;= \frac{2l+1}{z} j_{l}(z) - j_{l-1}(z)
+    \quad (l \geq 1)
+    \quad (\mbox{DLMF 10.51.1}) \\
+  j_{n}(z) &amp;\approx \frac{z^{n}}{(2n+1)!!} \quad (z \to 0) \\\end{split}\]</div>
+<p>The derivative of spherical Bessel function of the first kind</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}  j_{0}'(z) &amp;= -j_{1}(z) \\
+  j_{l}'(z)
+    &amp;= j_{l-1}(z) - \frac{l+1}{z} j_{l}(z)
+    \quad (l \geq 1)
+    \quad (\mbox{DLMF 10.51.2}) \\\end{split}\]</div>
+</section>
+<section id="spherical-harmonics-with-m-0">
+<h3>Spherical harmonics with <span class="math notranslate nohighlight">\(m=0\)</span><a class="headerlink" href="#spherical-harmonics-with-m-0" title="Permalink to this headline">#</a></h3>
+<div class="math notranslate nohighlight">
+\[\begin{split}  Y_{l}^{0}(\theta)
+    &amp;= \sqrt{ \frac{2l+1}{4\pi} } P_{l}(\cos \theta) \\
+  \frac{d }{d \theta} Y_{l}^{0}(\theta)
+    &amp;= \sqrt{ \frac{2l+1}{4\pi} } \frac{d}{d \theta}  P_{l}(\cos \theta) \\\end{split}\]</div>
+<p>This definition adopts Condon-Shortley phase.</p>
+<p>Legendre polynomial (DLMF 14.10.3)</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}  P_{0}(x) &amp;= 1 \\
+  P_{1}(x) &amp;= x \\
+  (n + 1) P_{n+1}(x) - (2n+1) x P_{n}(x) + n P_{n-1}(x) &amp;= 0 \quad (n \geq 1)\end{split}\]</div>
+<p>Derivative of Legendre polynomial</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}  \frac{d}{d x} P_{n}(x) &amp;= n P_{n-1}(x) + x \frac{d}{dx} P_{n-1}(x) \quad (n \geq 1) \\
+  \frac{d}{d \theta} P_{n}^{(m)}(\cos \theta)
+    &amp;= -\frac{1}{\sin \theta} \left( (n+m) P_{n-1}^{(m)}(\cos \theta) - n \cos \theta P_{n}^{(m)}(\cos \theta) \right) \\\end{split}\]</div>
+</section>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">#</a></h2>
