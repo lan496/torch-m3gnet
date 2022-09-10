@@ -15,8 +15,6 @@ class MaterialGraph(Data):
     """
     Args
     ----
-    x: (num_nodes, num_node_features) torch.float
-        Node features
     pos: (num_nodes, 3) torch.float
         Cartesian coordinates
     atom_types: (num_nodes, ) torch.long
@@ -25,21 +23,14 @@ class MaterialGraph(Data):
         Number of triplets containing each node
 
     edge_index: (2, num_edges) torch.long
-    edge_attr: (num_edges, num_edge_features) torch.float
-        Edge features
-    edge_weights: (num_edges, ) torch.float
-        Distance of each edge
     edge_cell_shift: (num_edges, 3) torch.int
         Unit-cell vector from source node to destination node
     num_triplet_ij: (num_edges, )
         Number of triplets containing nodes in each edge
-
     triplet_edge_index: (2, num_triplets) torch.long
         triplet_edge_index[:, f] = [e1, e2] form the `f`-th triplet.
         edge_index[:, e1] = [i, j], edge_index[:, e2] = [i, k]
         Then, [i, j, k] is nodes of the `f`-th triplet.
-    triplet_cos_angles: (num_triplets, ) torch.float
-        Cosine of angle between j-i-k
 
     lattice: (3, 3) torch.float
         Row-wise lattice matrix
@@ -47,8 +38,19 @@ class MaterialGraph(Data):
     num_nodes: int
     num_edges: int
     num_triplets: int
-    num_node_features: int
-    num_edge_features: int
+
+    edge_weights: (num_edges, ) torch.float
+        Distance of each edge
+    triplet_cos_angles: (num_triplets, ) torch.float
+        Cosine of angle between j-i-k
+
+    x: (num_nodes, num_node_features) torch.float
+        Node features
+    edge_attr: (num_edges, num_edge_features) torch.float
+        Edge features
+
+    atomic_energy: (num_nodes, )
+    total_energy: (1, )
     """
 
     def __init__(
@@ -87,6 +89,9 @@ class MaterialGraph(Data):
             # Features
             x=None,
             edge_attr=None,
+            # Targets
+            atomic_energy=None,
+            total_energy=None,
         )
 
     def __cat_dim__(self, key: str, value: Any, *args: Any, **kwargs: Any):

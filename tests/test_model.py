@@ -5,12 +5,12 @@ from torch_geometric.data import Batch
 
 from torch_m3gnet.data import MaterialGraphKey
 from torch_m3gnet.data.material_graph import BatchMaterialGraph, MaterialGraph
-from torch_m3gnet.model.build import build_model
+from torch_m3gnet.model.build import build_energy_model
 from torch_m3gnet.utils import rotate_cell
 
 
 def test_model(graph: BatchMaterialGraph):
-    model = build_model(
+    model = build_energy_model(
         n_max=3,
         l_max=5,
         num_types=93,
@@ -19,11 +19,12 @@ def test_model(graph: BatchMaterialGraph):
     graph = model(graph)
     assert not torch.any(torch.isnan(graph[MaterialGraphKey.NODE_FEATURES]))
     assert not torch.any(torch.isnan(graph[MaterialGraphKey.EDGE_ATTR]))
+    assert not torch.any(torch.isnan(graph[MaterialGraphKey.ATOMIC_ENERGY]))
 
 
 def test_three_body_interaction(graph: BatchMaterialGraph):
     """Model should be invariant with order of triplets."""
-    model = build_model()
+    model = build_energy_model()
     graph = model(graph)
     edge_features1 = graph[MaterialGraphKey.EDGE_ATTR].clone()
 
@@ -43,7 +44,7 @@ def test_three_body_interaction(graph: BatchMaterialGraph):
 
 
 def test_rotation_invariance(lattice_coords_types):
-    model = build_model()
+    model = build_energy_model()
 
     lattice, cart_coords, species = lattice_coords_types
     structure = Structure(lattice, species, cart_coords, coords_are_cartesian=True)

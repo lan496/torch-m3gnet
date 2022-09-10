@@ -125,6 +125,12 @@ Derivative of Legendre polynomial
   &= \mathbf{v}_{i} + \sum_{j \in \mathcal{N}_{i}} \mathbf{\phi}_{e}'(\mathbf{v}_{i} \oplus \mathbf{v}_{j} \oplus \mathbf{e}_{ij}') \odot \mathbf{W}_{e}'^{0} \mathbf{e}_{ij}^{0}
 ```
 
+## Readout
+
+```{math}
+  E = \sum_{i} \phi_{3}(\mathbf{v}_{i})
+```
+
 ## References
 ```{bibliography}
 :filter: docname in docnames
