@@ -6,6 +6,7 @@ from torchtyping import TensorType  # type: ignore
 
 from torch_m3gnet.data import MaterialGraphKey
 from torch_m3gnet.data.material_graph import BatchMaterialGraph
+from torch_m3gnet.nn.core import GatedMLP
 
 SPHERICAL_BESSEL_ZEROS = [
     [
@@ -161,9 +162,7 @@ class ThreeBodyInteration(torch.nn.Module):
         self.spherical_bessel_zeros = self.spherical_bessel_zeros[: self.l_max, : self.n_max]
 
         self.linear_sigmoid1 = torch.nn.Linear(self.num_node_features, self.num_edge_features)
-        self.linear_sigmoid2 = torch.nn.Linear(self.num_edge_features, self.num_edge_features)
-        self.linear_swish = torch.nn.Linear(self.num_edge_features, self.num_edge_features)
-        self.swish = torch.nn.SiLU()
+        self.gated_mlp = GatedMLP(in_features=self.num_edge_features, num_layers=1)
 
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         rij = graph[MaterialGraphKey.EDGE_DISTANCES][graph[MaterialGraphKey.TRIPLET_EDGE_INDEX][0]]
@@ -200,7 +199,7 @@ class ThreeBodyInteration(torch.nn.Module):
         )
         mid_edge_features_t: TensorType["num_edges", "num_edge_features"] = torch.transpose(mid_edge_features, 0, 1)  # type: ignore # noqa: F821
 
-        graph[MaterialGraphKey.EDGE_ATTR] += self.swish(self.linear_swish(mid_edge_features_t)) * torch.sigmoid(self.linear_sigmoid2(mid_edge_features_t))  # type: ignore # noqa: F821
+        graph[MaterialGraphKey.EDGE_ATTR] += self.gated_mlp(mid_edge_features_t)
 
         return graph
 

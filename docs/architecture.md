@@ -116,6 +116,15 @@ Derivative of Legendre polynomial
     &= -\frac{1}{\sin \theta} \left( (n+m) P_{n-1}^{(m)}(\cos \theta) - n \cos \theta P_{n}^{(m)}(\cos \theta) \right) \\
 ```
 
+## Graph Convolution
+
+```{math}
+\mathbf{e}_{ij}'
+  &= \mathbf{e}_{ij} + \phi_{e}(\mathbf{v}_{i} \oplus \mathbf{v}_{j} \oplus \mathbf{e}_{ij}) \mathbf{W}_{e}^{0} \mathbf{e}_{ij}^{0} \\
+\mathbf{v}_{i}'
+  &= \mathbf{v}_{i} + \sum_{j \in \mathcal{N}_{i}} \phi_{e}'(\mathbf{v}_{i} \oplus \mathbf{v}_{j} \oplus \mathbf{e}_{ij}') \mathbf{W}_{e}'^{0} \mathbf{e}_{ij}^{0}
+```
+
 ## References
 ```{bibliography}
 :filter: docname in docnames
