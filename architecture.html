@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Network architecture &#8212; torch-m3gnet 0.1.dev14+gac69818</title>
+    <title>Network architecture &#8212; torch-m3gnet 0.1.dev17+g4c265d5</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -74,7 +74,7 @@
       
       
       
-      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev14+gac69818</h1>
+      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev17+g4c265d5</h1>
       
     </a>
 </div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
@@ -360,7 +360,7 @@ title="Print to PDF"
 <h2>Bond featurizer<a class="headerlink" href="#bond-featurizer" title="Permalink to this headline">#</a></h2>
 <p><span id="id1">[<a class="reference internal" href="references.html#id8" title="Emir Kocer, Jeremy K. Mason, and Hakan Erturk. A novel approach to describe chemical environments in high-dimensional neural network potentials. The Journal of Chemical Physics, 150(15):154102, 2019. URL: https://doi.org/10.1063/1.5086167, doi:10.1063/1.5086167.">KME19</a>]</span></p>
 <div class="math notranslate nohighlight">
-\[\begin{split}e_{m} &amp;= \frac{ m^{2}(m+2)^{2} }{ 4(m+1)^{2} + 1 } \\
+\[\begin{split}e_{m} &amp;= \frac{ m^{2}(m+2)^{2} }{ 4(m+1)^{4} + 1 } \\
 d_{0} &amp;= 1 \\
 d_{m} &amp;= 1 - \frac{ e_{m} }{ d_{m-1} } \quad (m \geq 1) \\
 f_{m}(r)
@@ -383,16 +383,18 @@ h_{m}(r)
 <section id="three-body-to-bond">
 <h2>Three-body to bond<a class="headerlink" href="#three-body-to-bond" title="Permalink to this headline">#</a></h2>
 <div class="math notranslate nohighlight">
-\[\begin{split}    \tilde{\mathbf{e}}_{ij}
-        &amp;=
-        \mathcal{L}_{\mathrm{sigmoid}}(\mathbf{v}_{k})
-        \odot
-        \left(
-            \sum_{ k \in \mathcal{N}_{i} \backslash \{ j \} } j_{l}(z_{ln} \frac{r_{ik}}{r_{c}} ) Y_{l}^{0}(\theta_{jik})  f_{c}(r_{ij}) f_{c}(r_{ik})
-        \right)_{l=0, \dots, l_{\max}-1, n=0, \dots, n_{\max}-1} \\
-    \mathbf{e}_{ij}
-        &amp;\leftarrow \mathbf{e}_{ij}
-            + \mathcal{L}_{\mathrm{swish}}(\tilde{\mathbf{e}}_{ij}) \odot \mathcal{L}_{\mathrm{sigmoid}}(\tilde{\mathbf{e}}_{ij}) \\\end{split}\]</div>
+\[\begin{split}  \tilde{\mathbf{v}_{i}}
+    &amp;= \mathcal{L}_{\sigma}(\mathbf{v}_{i}) \\
+  \tilde{e}_{ij}
+    &amp;= \sum_{k \in \mathcal{N}_{i} \backslash \{ j \} }
+          \left(
+              j_{l}(z_{ln}\frac{r_{ik}}{r_{c}}) Y_{l}^{0}(\theta_{jik}) f_{c}(r_{ij}) f_{c}(r_{ik})
+          \right)_{l=0, \dots, l_{\max}-1, n=0, \dots, n_{\max}-1}
+          \odot
+          \tilde{\mathbf{v}}_{k} \\
+  \mathbf{e}_{ij}
+      &amp;\leftarrow \mathbf{e}_{ij}
+          + \mathcal{L}_{\mathrm{swish}}(\tilde{\mathbf{e}}_{ij}) \odot \mathcal{L}_{\mathrm{sigmoid}}(\tilde{\mathbf{e}}_{ij}) \\\end{split}\]</div>
 <p><span class="math notranslate nohighlight">\(j_{l}\)</span> is the <span class="math notranslate nohighlight">\(l\)</span>th spherical Bessel function with roots at <span class="math notranslate nohighlight">\(z_{ln} \, (n=0, \dots, n_{\max}-1)\)</span>.
 <span class="math notranslate nohighlight">\(Y_{l}^{0}\)</span> is the spherical harmonics with <span class="math notranslate nohighlight">\(m=0\)</span>.
 <span class="math notranslate nohighlight">\(\mathcal{L}_{\sigma}\)</span> is a one-layer perceptron with activation function <span class="math notranslate nohighlight">\(\sigma\)</span>.</p>
