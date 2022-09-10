@@ -37,7 +37,6 @@ class EdgeFeaturizer(torch.nn.Module):
 
     Forward function supplies the following attributes:
         - MaterialGraphKey.EDGE_WEIGHTS
-        - MaterialGraphKey.EDGE_ATTR
     """
 
     def __init__(self, degree: int, cutoff: float):
@@ -93,6 +92,35 @@ class EdgeFeaturizer(torch.nn.Module):
             )
 
         graph[MaterialGraphKey.EDGE_WEIGHTS]: TensorType["num_edges", "degree"] = torch.transpose(hm, 0, 1)  # type: ignore # noqa: F821
-        graph[MaterialGraphKey.EDGE_ATTR]: TensorType["num_edges", "degree"] = graph[MaterialGraphKey.EDGE_WEIGHTS].clone()  # type: ignore # noqa: F821
 
+        return graph
+
+
+class EdgeAdjustor(torch.nn.Module):
+    """Initialize edge features.
+
+    Forward function supplies the following attributes:
+        - MaterialGraphKey.EDGE_ATTR
+    """
+
+    def __init__(
+        self,
+        degree: int,
+        num_edge_features: int,
+    ):
+        super().__init__()
+        self.degree = degree
+        self.num_edge_features = num_edge_features
+
+        self.linear = torch.nn.Linear(
+            in_features=self.degree,
+            out_features=self.num_edge_features,
+            bias=False,
+        )
+        self.swish = torch.nn.SiLU()
+
+    def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
+        edge_weights: TensorType["num_edges", "degree"] = graph[MaterialGraphKey.EDGE_WEIGHTS].clone()  # type: ignore # noqa: F821
+        edge_features: TensorType["num_edges", "num_edge_features"] = self.swish(self.linear(edge_weights))  # type: ignore # noqa: F821
+        graph[MaterialGraphKey.EDGE_ATTR] = edge_features
         return graph

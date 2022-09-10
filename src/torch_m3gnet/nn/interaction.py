@@ -145,14 +145,16 @@ class ThreeBodyInteration(torch.nn.Module):
         l_max: int,
         n_max: int,
         num_node_features: int,
+        num_edge_features: int,
     ):
         super().__init__()
 
         self.cutoff = cutoff
         self.l_max = l_max
         self.n_max = n_max
+        self.degree = self.l_max * self.n_max
         self.num_node_features = num_node_features
-        self.num_edge_features = self.l_max * self.n_max
+        self.num_edge_features = num_edge_features
 
         self.spherical_bessel_zeros = torch.tensor(SPHERICAL_BESSEL_ZEROS)
         if self.spherical_bessel_zeros.size(0) < self.l_max:
@@ -161,8 +163,11 @@ class ThreeBodyInteration(torch.nn.Module):
             raise ValueError("Too large n_max is specified.")
         self.spherical_bessel_zeros = self.spherical_bessel_zeros[: self.l_max, : self.n_max]
 
-        self.linear_sigmoid1 = torch.nn.Linear(self.num_node_features, self.num_edge_features)
-        self.gated_mlp = GatedMLP(in_features=self.num_edge_features, num_layers=1)
+        self.linear_sigmoid1 = torch.nn.Linear(self.num_node_features, self.degree)
+        self.gated_mlp = GatedMLP(
+            in_features=self.degree,
+            dimensions=[self.num_edge_features],
+        )
 
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         rij = graph[MaterialGraphKey.EDGE_DISTANCES][graph[MaterialGraphKey.TRIPLET_EDGE_INDEX][0]]
@@ -192,12 +197,14 @@ class ThreeBodyInteration(torch.nn.Module):
         # Summation over triplets including edge i-j
         node_index_k: TensorType["num_triplets"] = graph[MaterialGraphKey.EDGE_INDEX][1][graph[MaterialGraphKey.TRIPLET_EDGE_INDEX][1]]  # type: ignore # noqa: F821
         mid_edge_features_tmp: TensorType["l_max", "n_max", "num_triplets"] = jnlk * sph[:, None, :] * fc_ij[None, None, :] * fc_ik[None, None, :] * torch.transpose(mid_node_features[node_index_k], 0, 1).reshape(self.l_max, self.n_max, -1)  # type: ignore # noqa: F821
-        mid_edge_features: TensorType["num_edge_features", "num_edges"] = scatter_sum(  # type: ignore # noqa: F821
-            # ["num_edge_features", "num_triplets"]
-            mid_edge_features_tmp.reshape(self.num_edge_features, -1),
+        num_edges = graph[MaterialGraphKey.EDGE_DISTANCES].size(0)
+        mid_edge_features: TensorType["degree", "num_edges"] = scatter_sum(  # type: ignore # noqa: F821
+            # ["degree", "num_triplets"]
+            mid_edge_features_tmp.reshape(self.degree, -1),
             graph[MaterialGraphKey.TRIPLET_EDGE_INDEX][0],
+            dim_size=num_edges,
         )
-        mid_edge_features_t: TensorType["num_edges", "num_edge_features"] = torch.transpose(mid_edge_features, 0, 1)  # type: ignore # noqa: F821
+        mid_edge_features_t: TensorType["num_edges", "degree"] = torch.transpose(mid_edge_features, 0, 1)  # type: ignore # noqa: F821
 
         graph[MaterialGraphKey.EDGE_ATTR] += self.gated_mlp(mid_edge_features_t)
 
