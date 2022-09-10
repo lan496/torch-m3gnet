@@ -10,8 +10,7 @@ class AtomFeaturizer(torch.nn.Module):
     """Featurize atomic numbers.
 
     Forward function supplies the following attributes:
-        - MaterialGraphKey.EDGE_WEIGHTS
-        - MaterialGraphKey.EDGE_ATTR
+        - MaterialGraphKey.NODE_FEATURES
     """
 
     def __init__(self, num_types: int, embedding_dim: int):
@@ -48,7 +47,7 @@ class EdgeFeaturizer(torch.nn.Module):
         self._cutoff = cutoff
 
         iota = torch.arange(self.degree)
-        self.em = (iota**2) * ((iota + 2) ** 2) / (4 * ((iota + 1) ** 2) + 1)
+        self.em = (iota**2) * ((iota + 2) ** 2) / (4 * ((iota + 1) ** 4) + 1)
         dm = torch.ones(self.degree)
         for m in range(1, self.degree):
             dm[m] = 1 - self.em[m] / dm[m - 1]
@@ -94,6 +93,6 @@ class EdgeFeaturizer(torch.nn.Module):
             )
 
         graph[MaterialGraphKey.EDGE_WEIGHTS]: TensorType["num_edges", "degree"] = torch.transpose(hm, 0, 1)  # type: ignore # noqa: F821
-        graph[MaterialGraphKey.EDGE_ATTR]: TensorType["num_edges", "degree"] = torch.transpose(hm, 0, 1)  # type: ignore # noqa: F821
+        graph[MaterialGraphKey.EDGE_ATTR]: TensorType["num_edges", "degree"] = graph[MaterialGraphKey.EDGE_WEIGHTS].clone()  # type: ignore # noqa: F821
 
         return graph

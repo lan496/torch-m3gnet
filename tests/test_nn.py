@@ -93,7 +93,7 @@ def test_edge_featurizer(graph: BatchMaterialGraph):
         EdgeFeaturizer(degree=degree, cutoff=5.0),
     )
     graph = model(graph)
-    assert not torch.all(torch.isnan(graph[MaterialGraphKey.EDGE_WEIGHTS]))
+    assert not torch.any(torch.isnan(graph[MaterialGraphKey.EDGE_WEIGHTS]))
     assert graph[MaterialGraphKey.EDGE_WEIGHTS].size(1) == degree
 
 
@@ -102,6 +102,7 @@ def test_atom_featurizer(graph: BatchMaterialGraph):
     model = AtomFeaturizer(num_types=15, embedding_dim=embedding_dim)
     graph = model(graph)
     assert graph[MaterialGraphKey.NODE_FEATURES].size(1) == embedding_dim
+    assert not torch.any(torch.isnan(graph[MaterialGraphKey.NODE_FEATURES]))
 
 
 @pytest.mark.parametrize(
