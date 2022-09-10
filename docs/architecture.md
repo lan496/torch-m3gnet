@@ -43,16 +43,18 @@ Embedding layer
 ## Three-body to bond
 
 ```{math}
-    \tilde{\mathbf{e}}_{ij}
-        &=
-        \mathcal{L}_{\mathrm{sigmoid}}(\mathbf{v}_{k})
-        \odot
-        \left(
-            \sum_{ k \in \mathcal{N}_{i} \backslash \{ j \} } j_{l}(z_{ln} \frac{r_{ik}}{r_{c}} ) Y_{l}^{0}(\theta_{jik})  f_{c}(r_{ij}) f_{c}(r_{ik})
-        \right)_{l=0, \dots, l_{\max}-1, n=0, \dots, n_{\max}-1} \\
-    \mathbf{e}_{ij}
-        &\leftarrow \mathbf{e}_{ij}
-            + \mathcal{L}_{\mathrm{swish}}(\tilde{\mathbf{e}}_{ij}) \odot \mathcal{L}_{\mathrm{sigmoid}}(\tilde{\mathbf{e}}_{ij}) \\
+  \tilde{\mathbf{v}_{i}}
+    &= \mathcal{L}_{\sigma}(\mathbf{v}_{i}) \\
+  \tilde{e}_{ij}
+    &= \sum_{k \in \mathcal{N}_{i} \backslash \{ j \} }
+          \left(
+              j_{l}(z_{ln}\frac{r_{ik}}{r_{c}}) Y_{l}^{0}(\theta_{jik}) f_{c}(r_{ij}) f_{c}(r_{ik})
+          \right)_{l=0, \dots, l_{\max}-1, n=0, \dots, n_{\max}-1}
+          \odot
+          \tilde{\mathbf{v}}_{k} \\
+  \mathbf{e}_{ij}
+      &\leftarrow \mathbf{e}_{ij}
+          + \mathcal{L}_{\mathrm{swish}}(\tilde{\mathbf{e}}_{ij}) \odot \mathcal{L}_{\mathrm{sigmoid}}(\tilde{\mathbf{e}}_{ij}) \\
 ```
 {math}`j_{l}` is the {math}`l`th spherical Bessel function with roots at {math}`z_{ln} \, (n=0, \dots, n_{\max}-1)`.
 {math}`Y_{l}^{0}` is the spherical harmonics with {math}`m=0`.

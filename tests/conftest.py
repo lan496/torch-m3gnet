@@ -9,7 +9,7 @@ from torch_geometric.data import Batch
 from torch_m3gnet.data.material_graph import BatchMaterialGraph, MaterialGraph
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def lattice_coords_types() -> tuple[NDArray, NDArray, list[str]]:
     a = 8.01
     lattice = np.eye(3) * a
@@ -53,7 +53,7 @@ def lattice_coords_types() -> tuple[NDArray, NDArray, list[str]]:
     return lattice, coords, types
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def datum() -> list[MaterialGraph]:
     r_nn = 3.0  # length to the 1st NN
     structures = [
@@ -85,6 +85,6 @@ def datum() -> list[MaterialGraph]:
     ]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def graph(datum) -> BatchMaterialGraph:
     return Batch.from_data_list(datum)
