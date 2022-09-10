@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Network architecture &#8212; torch-m3gnet 0.1.dev17+g4c265d5</title>
+    <title>Network architecture &#8212; torch-m3gnet 0.1.dev20+ga05ef37</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -74,7 +74,7 @@
       
       
       
-      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev17+g4c265d5</h1>
+      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev20+ga05ef37</h1>
       
     </a>
 </div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
@@ -271,6 +271,16 @@ title="Print to PDF"
   </ul>
  </li>
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#graph-convolution">
+   Graph Convolution
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#readout">
+   Readout
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#references">
    References
   </a>
@@ -328,6 +338,16 @@ title="Print to PDF"
     </a>
    </li>
   </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#graph-convolution">
+   Graph Convolution
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#readout">
+   Readout
+  </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#references">
@@ -444,6 +464,19 @@ h_{m}(r)
   \frac{d}{d \theta} P_{n}^{(m)}(\cos \theta)
     &amp;= -\frac{1}{\sin \theta} \left( (n+m) P_{n-1}^{(m)}(\cos \theta) - n \cos \theta P_{n}^{(m)}(\cos \theta) \right) \\\end{split}\]</div>
 </section>
+</section>
+<section id="graph-convolution">
+<h2>Graph Convolution<a class="headerlink" href="#graph-convolution" title="Permalink to this headline">#</a></h2>
+<div class="math notranslate nohighlight">
+\[\begin{split}\mathbf{e}_{ij}'
+  &amp;= \mathbf{e}_{ij} + \mathbf{\phi}_{e}(\mathbf{v}_{i} \oplus \mathbf{v}_{j} \oplus \mathbf{e}_{ij}) \odot \mathbf{W}_{e}^{0} \mathbf{e}_{ij}^{0} \\
+\mathbf{v}_{i}'
+  &amp;= \mathbf{v}_{i} + \sum_{j \in \mathcal{N}_{i}} \mathbf{\phi}_{e}'(\mathbf{v}_{i} \oplus \mathbf{v}_{j} \oplus \mathbf{e}_{ij}') \odot \mathbf{W}_{e}'^{0} \mathbf{e}_{ij}^{0}\end{split}\]</div>
+</section>
+<section id="readout">
+<h2>Readout<a class="headerlink" href="#readout" title="Permalink to this headline">#</a></h2>
+<div class="math notranslate nohighlight">
+\[  E = \sum_{i} \phi_{3}(\mathbf{v}_{i})\]</div>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">#</a></h2>
