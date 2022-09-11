@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+import torch
 from numpy.typing import NDArray
 from pymatgen.core import Structure
 from torch_geometric.data import Batch
 
 from torch_m3gnet.data.material_graph import BatchMaterialGraph, MaterialGraph
+from torch_m3gnet.model.build import build_energy_model
 
 
 @pytest.fixture
@@ -88,3 +90,16 @@ def datum() -> list[MaterialGraph]:
 @pytest.fixture
 def graph(datum) -> BatchMaterialGraph:
     return Batch.from_data_list(datum)
+
+
+@pytest.fixture
+def model() -> torch.nn.Sequential:
+    model = build_energy_model(
+        cutoff=5.0,
+        l_max=5,
+        n_max=3,
+        num_types=93,
+        embedding_dim=61,
+        num_blocks=3,
+    )
+    return model

@@ -51,7 +51,8 @@ def test_dataset(tmpdir: Path):
     threebody_cutoff = r_nn + 1e-4
 
     energies = [2.0, -3.0]
-    dataset = MaterialGraphDataset(tmpdir, structures, energies, cutoff, threebody_cutoff)
-    dataset2 = MaterialGraphDataset(tmpdir, structures, energies, cutoff, threebody_cutoff)
+    forces = np.zeros((2, 3))
+    stresses = np.zeros((2, 6))
+    MaterialGraphDataset(tmpdir, structures, energies, forces, stresses, cutoff, threebody_cutoff)
     # Load processed dataset for second time
-    assert dataset._processed and not dataset2._processed
+    MaterialGraphDataset(tmpdir, structures, energies, forces, stresses, cutoff, threebody_cutoff)

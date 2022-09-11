@@ -38,7 +38,7 @@ def test_distance_angle(graph: BatchMaterialGraph, datum: list[MaterialGraph]):
 def test_invariance(lattice_coords_types):
     lattice, cart_coords, species = lattice_coords_types
     structure = Structure(lattice, species, cart_coords, coords_are_cartesian=True)
-    graph = Batch.from_data_list([MaterialGraph.from_structure(structure)])
+    graph = Batch.from_data_list([MaterialGraph.from_structure(structure, 5.0, 4.0)])
 
     rotation = np.dot(
         np.array(
@@ -59,7 +59,7 @@ def test_invariance(lattice_coords_types):
     assert np.allclose(np.dot(rotation, rotation.T), np.eye(3))
     lattice2, cart_coords2 = rotate_cell(lattice, cart_coords, rotation)
     structure2 = Structure(lattice2, species, cart_coords2, coords_are_cartesian=True)
-    graph2 = Batch.from_data_list([MaterialGraph.from_structure(structure2)])
+    graph2 = Batch.from_data_list([MaterialGraph.from_structure(structure2, 5.0, 4.0)])
 
     # Distances and angles should be invariant as set w.r.t. rotations
     model = DistanceAndAngle()

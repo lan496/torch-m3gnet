@@ -5,7 +5,8 @@
 {cite}`doi:10.1021/acs.jpca.9b08723`
 
 ```shell
-git clone git@github.com:materialsvirtuallab/mlearn.git
+git clone git@github.com:materialsvirtuallab/mlearn.git datasets/
+python scripts/load_mlearn_dataset.py --raw_datadir datasets/mlearn/data --element Cu --config_path configs/mlearn_Cu.yaml
 ```
 
 Table. 1

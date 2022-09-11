@@ -50,21 +50,25 @@ class M3GNetConv(torch.nn.Module):
 
     def update_edge_features(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         concat: TensorType["num_edges", "num_concat_features"] = self._concat_features(graph)  # type: ignore # noqa: F821
-        graph[MaterialGraphKey.EDGE_ATTR] += self.concat_edge_update(concat) * self.edge_linear(
+        edge_update = self.concat_edge_update(concat) * self.edge_linear(
             graph[MaterialGraphKey.EDGE_WEIGHTS]
         )
+        graph[MaterialGraphKey.EDGE_ATTR] = graph[MaterialGraphKey.EDGE_ATTR] + edge_update
+
         return graph
 
     def update_node_features(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         concat: TensorType["num_edges", "num_concat_features"] = self._concat_features(graph)  # type: ignore # noqa: F821
         features: TensorType["num_edges", "num_node_features"] = self.concat_node_update(concat) * self.node_linear(graph[MaterialGraphKey.EDGE_WEIGHTS])  # type: ignore # noqa: F821
         num_nodes = graph[MaterialGraphKey.NODE_FEATURES].size(0)
-        graph[MaterialGraphKey.NODE_FEATURES] += scatter_sum(
+
+        node_update = scatter_sum(
             features,
             index=graph[MaterialGraphKey.EDGE_INDEX][0],
             dim=0,
             dim_size=num_nodes,
         )
+        graph[MaterialGraphKey.NODE_FEATURES] = graph[MaterialGraphKey.NODE_FEATURES] + node_update
         return graph
 
     @classmethod

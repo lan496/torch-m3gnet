@@ -38,6 +38,8 @@ singularity run --nv tensorflow.sif
 
 ## Preparing benchmark datasets
 
+See [docs/benchmark.md](docs/benchmark.md)
+
 ## References
 - M3gNet <https://github.com/materialsvirtuallab/m3gnet>
 - NequIP <https://github.com/mir-group/nequip>

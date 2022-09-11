@@ -1,4 +1,5 @@
 import torch
+from torch_scatter import scatter_sum
 from torchtyping import TensorType  # type: ignore
 
 from torch_m3gnet.data import MaterialGraphKey
@@ -24,11 +25,15 @@ class AtomWiseReadout(torch.nn.Module):
 
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         x = graph[MaterialGraphKey.NODE_FEATURES]
-        atomic_energy: TensorType["num_nodes"] = self.gated(x)  # type: ignore # noqa: F821
+        atomic_energy: TensorType["num_nodes"] = self.gated(x)[:, 0]  # type: ignore # noqa: F821
 
         # Elemental energies from AtomRef
         elemental_energies: TensorType["num_nodes"] = graph[MaterialGraphKey.ELEMENTAL_ENERGIES]  # type: ignore # noqa: F821
 
         graph[MaterialGraphKey.ATOMIC_ENERGIES] = atomic_energy + elemental_energies
-        graph[MaterialGraphKey.TOTAL_ENERGY] = torch.sum(graph[MaterialGraphKey.ATOMIC_ENERGIES])
+        graph[MaterialGraphKey.TOTAL_ENERGY] = scatter_sum(
+            graph[MaterialGraphKey.ATOMIC_ENERGIES],
+            index=graph[MaterialGraphKey.BATCH],
+            dim_size=graph[MaterialGraphKey.LATTICE].size(0),
+        )
         return graph

@@ -192,11 +192,13 @@ class ThreeBodyInteration(torch.nn.Module):
             ]
         )
 
-        mid_node_features: TensorType["num_nodes", "num_edge_features"] = torch.sigmoid(self.linear_sigmoid1(graph[MaterialGraphKey.NODE_FEATURES]))  # type: ignore # noqa: F821
+        mid_node_features: TensorType["num_nodes", "degree"] = self.linear_sigmoid1(graph[MaterialGraphKey.NODE_FEATURES])  # type: ignore # noqa: F821
+        mid_node_features = torch.sigmoid(mid_node_features)
+        mid_node_features_reshaped: TensorType["l_max", "n_max", "num_nodes"] = torch.transpose(mid_node_features, 0, 1).reshape(self.l_max, self.n_max, -1)  # type: ignore # noqa: F821
 
         # Summation over triplets including edge i-j
         node_index_k: TensorType["num_triplets"] = graph[MaterialGraphKey.EDGE_INDEX][1][graph[MaterialGraphKey.TRIPLET_EDGE_INDEX][1]]  # type: ignore # noqa: F821
-        mid_edge_features_tmp: TensorType["l_max", "n_max", "num_triplets"] = jnlk * sph[:, None, :] * fc_ij[None, None, :] * fc_ik[None, None, :] * torch.transpose(mid_node_features[node_index_k], 0, 1).reshape(self.l_max, self.n_max, -1)  # type: ignore # noqa: F821
+        mid_edge_features_tmp: TensorType["l_max", "n_max", "num_triplets"] = jnlk * sph[:, None, :] * fc_ij[None, None, :] * fc_ik[None, None, :] * mid_node_features_reshaped[:, :, node_index_k]  # type: ignore # noqa: F821
         num_edges = graph[MaterialGraphKey.EDGE_DISTANCES].size(0)
         mid_edge_features: TensorType["degree", "num_edges"] = scatter_sum(  # type: ignore # noqa: F821
             # ["degree", "num_triplets"]
@@ -206,7 +208,8 @@ class ThreeBodyInteration(torch.nn.Module):
         )
         mid_edge_features_t: TensorType["num_edges", "degree"] = torch.transpose(mid_edge_features, 0, 1)  # type: ignore # noqa: F821
 
-        graph[MaterialGraphKey.EDGE_ATTR] += self.gated_mlp(mid_edge_features_t)
+        edge_update = self.gated_mlp(mid_edge_features_t)
+        graph[MaterialGraphKey.EDGE_ATTR] = graph[MaterialGraphKey.EDGE_ATTR] + edge_update
 
         return graph
 

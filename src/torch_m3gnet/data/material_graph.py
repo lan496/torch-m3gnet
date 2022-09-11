@@ -51,6 +51,8 @@ class MaterialGraph(Data):
 
     atomic_energy: (num_nodes, )
     total_energy: (1, )
+    forces: (num_nodes, 3)
+    stresses: (6, )
     """
 
     def __init__(
@@ -93,12 +95,18 @@ class MaterialGraph(Data):
             # Targets
             atomic_energies=None,
             total_energy=None,
+            forces=None,
+            stresses=None,
         )
 
     def __cat_dim__(self, key: str, value: Any, *args: Any, **kwargs: Any):
         if key in [MaterialGraphKey.EDGE_INDEX, MaterialGraphKey.TRIPLET_EDGE_INDEX]:
             return 1
-        elif key in [MaterialGraphKey.LATTICE]:
+        elif key in [
+            MaterialGraphKey.LATTICE,
+            MaterialGraphKey.TOTAL_ENERGY,
+            MaterialGraphKey.STRESSES,
+        ]:
             # graph-level properties and so need a new batch dimension
             return None
         else:
@@ -118,11 +126,11 @@ class MaterialGraph(Data):
     def from_structure(
         cls,
         structure: Structure,
-        cutoff: float = 5.0,
-        threebody_cutoff: float = 4.0,
+        cutoff: float,
+        threebody_cutoff: float,
     ) -> MaterialGraph:
         lattice = torch.as_tensor(structure.lattice.matrix.copy(), dtype=torch.float)
-        pos = torch.as_tensor(structure.cart_coords, dtype=torch.float)
+        pos = torch.tensor(structure.cart_coords, dtype=torch.float, requires_grad=True)
 
         edge_index, edge_cell_shift, distances = get_all_neighbors_with_cell_shifts(
             structure, cutoff

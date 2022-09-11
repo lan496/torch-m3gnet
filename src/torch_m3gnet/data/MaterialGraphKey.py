@@ -26,6 +26,8 @@ EDGE_ATTR = "edge_attr"
 # Targets
 ATOMIC_ENERGIES = "atomic_energies"
 TOTAL_ENERGY = "total_energy"
+FORCES = "forces"
+STRESSES = "stresses"
 
 # BatchMaterialGraph
 BATCH = "batch"

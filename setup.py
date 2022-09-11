@@ -17,6 +17,8 @@ REQUIRED = [
     "torch-spline-conv",
     "torch-geometric",
     "pymatgen>=2022.7.25",
+    "ruamel.yaml",  # TODO: use hydra
+    "joblib",
 ]
 
 EXTRAS = {

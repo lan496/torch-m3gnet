@@ -10,12 +10,12 @@ from torch_m3gnet.nn.readout import AtomWiseReadout
 
 
 def build_energy_model(
-    cutoff: float = 5.0,
-    l_max: int = 3,
-    n_max: int = 3,
-    num_types: int = 95,
-    embedding_dim: int = 64,
-    num_blocks: int = 3,
+    cutoff: float,
+    l_max: int,
+    n_max: int,
+    num_types: int,
+    embedding_dim: int,
+    num_blocks: int,
     elemental_energies: TensorType["num_types"] | None = None,  # type: ignore # noqa: F821
 ) -> torch.nn.Sequential:
     degree = n_max * l_max
