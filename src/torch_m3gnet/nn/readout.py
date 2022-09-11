@@ -25,6 +25,10 @@ class AtomWiseReadout(torch.nn.Module):
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         x = graph[MaterialGraphKey.NODE_FEATURES]
         atomic_energy: TensorType["num_nodes"] = self.gated(x)  # type: ignore # noqa: F821
-        graph[MaterialGraphKey.ATOMIC_ENERGY] = atomic_energy
-        graph[MaterialGraphKey.TOTAL_ENERGY] = torch.sum(atomic_energy)
+
+        # Elemental energies from AtomRef
+        elemental_energies: TensorType["num_nodes"] = graph[MaterialGraphKey.ELEMENTAL_ENERGIES]  # type: ignore # noqa: F821
+
+        graph[MaterialGraphKey.ATOMIC_ENERGIES] = atomic_energy + elemental_energies
+        graph[MaterialGraphKey.TOTAL_ENERGY] = torch.sum(graph[MaterialGraphKey.ATOMIC_ENERGIES])
         return graph

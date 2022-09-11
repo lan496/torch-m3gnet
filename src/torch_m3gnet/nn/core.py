@@ -8,10 +8,12 @@ class GatedMLP(torch.nn.Module):
         self,
         in_features: int,
         dimensions: list[int],
+        is_output: bool = False,
     ):
         super().__init__()
         self.in_features = in_features
         self.dimensions = dimensions
+        self.is_output = is_output
 
         self.dense = torch.nn.Sequential()
         self.gate = torch.nn.Sequential()
@@ -26,7 +28,8 @@ class GatedMLP(torch.nn.Module):
             self.dense.append(
                 torch.nn.Linear(in_features=in_features_i, out_features=out_features_i)
             )
-            self.dense.append(torch.nn.Sigmoid())
+            if (i < num_layers - 1) and (not self.is_output):
+                self.dense.append(torch.nn.Sigmoid())
 
             self.gate.append(
                 torch.nn.Linear(in_features=in_features_i, out_features=out_features_i)

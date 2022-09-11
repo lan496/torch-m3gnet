@@ -11,6 +11,7 @@ REQUIRED = [
     "typing_extensions",
     "torchtyping==0.1.4",
     "torch>=1.12.0",
+    "pytorch-lightning>=1.7.5",
     "torch-scatter",
     "torch-sparse",
     "torch-spline-conv",

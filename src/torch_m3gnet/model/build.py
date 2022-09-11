@@ -1,5 +1,7 @@
 import torch
+from torchtyping import TensorType  # type: ignore
 
+from torch_m3gnet.nn.atom_ref import AtomRef
 from torch_m3gnet.nn.conv import M3GNetConv
 from torch_m3gnet.nn.featurizer import AtomFeaturizer, EdgeAdjustor, EdgeFeaturizer
 from torch_m3gnet.nn.interaction import ThreeBodyInteration
@@ -14,11 +16,16 @@ def build_energy_model(
     num_types: int = 95,
     embedding_dim: int = 64,
     num_blocks: int = 3,
+    elemental_energies: TensorType["num_types"] | None = None,  # type: ignore # noqa: F821
 ) -> torch.nn.Sequential:
     degree = n_max * l_max
     num_edge_features = embedding_dim
 
+    if elemental_energies is None:
+        elemental_energies = torch.zeros(num_types)
+
     model = torch.nn.Sequential(
+        AtomRef(elemental_energies),
         DistanceAndAngle(),
         EdgeFeaturizer(degree=degree, cutoff=cutoff),
         EdgeAdjustor(degree=degree, num_edge_features=num_edge_features),

@@ -17,13 +17,14 @@ NUM_TRIPLETS = "num_triplets"
 EDGE_DISTANCES = "edge_distances"
 EDGE_WEIGHTS = "edge_weights"
 TRIPLET_ANGLES = "triplet_angles"
+ELEMENTAL_ENERGIES = "elemental_energies"
 
 # Features
 NODE_FEATURES = "x"
 EDGE_ATTR = "edge_attr"
 
 # Targets
-ATOMIC_ENERGY = "atomic_energy"
+ATOMIC_ENERGIES = "atomic_energies"
 TOTAL_ENERGY = "total_energy"
 
 # BatchMaterialGraph

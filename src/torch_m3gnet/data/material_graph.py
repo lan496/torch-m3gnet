@@ -86,11 +86,12 @@ class MaterialGraph(Data):
             edge_distances=None,
             triplet_angles=None,
             edge_weights=None,
+            elemental_energies=None,
             # Features
             x=None,
             edge_attr=None,
             # Targets
-            atomic_energy=None,
+            atomic_energies=None,
             total_energy=None,
         )
 
@@ -127,8 +128,8 @@ class MaterialGraph(Data):
             structure, cutoff
         )
 
-        # Initialize node features by atomic numbers
-        atom_types = torch.as_tensor([site.specie.Z for site in structure], dtype=torch.long)
+        # Initialize node features by 0-indexed atomic numbers
+        atom_types = torch.as_tensor([site.specie.Z - 1 for site in structure], dtype=torch.long)
 
         if threebody_cutoff > cutoff:
             raise ValueError("Three body cutoff raidus should be smaller than two body.")
