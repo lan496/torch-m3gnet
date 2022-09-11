@@ -131,6 +131,8 @@ Derivative of Legendre polynomial
   E = \sum_{i} \phi_{3}(\mathbf{v}_{i})
 ```
 
+## Elemental reference energy
+
 ## References
 ```{bibliography}
 :filter: docname in docnames
