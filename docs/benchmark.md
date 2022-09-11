@@ -2,6 +2,12 @@
 
 ## IAP datasets
 
+{cite}`doi:10.1021/acs.jpca.9b08723`
+
+```shell
+git clone git@github.com:materialsvirtuallab/mlearn.git
+```
+
 Table. 1
 
 ## MPF.2021.2.8

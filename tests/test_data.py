@@ -1,6 +1,11 @@
+from pathlib import Path
+
+import numpy as np
 import torch
+from pymatgen.core import Structure
 
 from torch_m3gnet.data import MaterialGraphKey
+from torch_m3gnet.data.dataset import MaterialGraphDataset
 
 
 def test_batch(graph):
@@ -17,3 +22,36 @@ def test_batch(graph):
         graph[MaterialGraphKey.NUM_TRIPLET_I],
         torch.tensor([132, 132, 132, 132, 56, 56]),
     )
+
+
+def test_dataset(tmpdir: Path):
+    r_nn = 3.0  # length to the 1st NN
+    structures = [
+        # Al-fcc
+        Structure(
+            lattice=r_nn * np.sqrt(2) * np.eye(3),
+            species=["Al", "Al", "Al", "Al"],
+            coords=[
+                [0, 0, 0],
+                [0, 0.5, 0.5],
+                [0.5, 0, 0.5],
+                [0.5, 0.5, 0],
+            ],
+        ),
+        Structure(
+            lattice=r_nn / np.sqrt(3) * 2 * np.eye(3),
+            species=["Na", "Na"],
+            coords=[
+                [0, 0, 0],
+                [0.5, 0.5, 0.5],
+            ],
+        ),
+    ]
+    cutoff = r_nn + 1e-4
+    threebody_cutoff = r_nn + 1e-4
+
+    energies = [2.0, -3.0]
+    dataset = MaterialGraphDataset(tmpdir, structures, energies, cutoff, threebody_cutoff)
+    dataset2 = MaterialGraphDataset(tmpdir, structures, energies, cutoff, threebody_cutoff)
+    # Load processed dataset for second time
+    assert dataset._processed and not dataset2._processed
