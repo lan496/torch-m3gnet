@@ -10,7 +10,7 @@ REQUIRED = [
     "wheel",
     "typing_extensions",
     "torchtyping==0.1.4",
-    "torch>=1.12.0",
+    "torch",
     "pytorch-lightning>=1.7.5",
     "torch-scatter",
     "torch-sparse",
@@ -23,7 +23,7 @@ REQUIRED = [
 
 EXTRAS = {
     "dev": [
-        "pytest==7.1.3",
+        "pytest",
         # "pytest-cov==3.0.0",
         "typeguard==2.13.3",
         "pre-commit",

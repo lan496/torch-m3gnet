@@ -1,5 +1,9 @@
+# https://docs.nvidia.com/deeplearning/frameworks/pytorch-release-notes/rel_22-08.html#rel_22-08
+# Ubuntu 20.04 including Python 3.8
+# NVIDIA CUDA 11.6.2
+# PyTorch 1.12.0a0+bd13bc6
 BootStrap: docker
-From: pytorch/pytorch:1.12.0-cuda11.3-cudnn8-devel
+From: nvcr.io/nvidia/pytorch:22.04-py3
 
 %post
     export DEBIAN_FRONTEND=noninteractive
@@ -36,23 +40,9 @@ From: pytorch/pytorch:1.12.0-cuda11.3-cudnn8-devel
         vim
     rm -rf /var/lib/apt/lists/*
 
-    # pyenv
-    PYTHON_VERSION=3.10.4
-    export HOME=/root
-    export PYENV_ROOT=$HOME/.pyenv
-    export PATH=$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH
-    git clone https://github.com/pyenv/pyenv.git $PYENV_ROOT
-    echo 'eval "$(pyenv init -)"' >> ~/.bashrc && eval "$(pyenv init -)"
-    pyenv install ${PYTHON_VERSION} && \
-        pyenv global ${PYTHON_VERSION}
-    pyenv rehash
-    python -m pip install --upgrade pip
-
     # Install dependencies
-    pip install torch-scatter torch-sparse torch-cluster torch-spline-conv torch-geometric -f https://data.pyg.org/whl/torch-1.12.0+cu113.html
-    python -m pip install pymatgen==2022.7.25 cython==0.29.30
+    pip install --upgrade pip
+    pip install torch-scatter torch-sparse torch-cluster torch-spline-conv torch-geometric -f https://data.pyg.org/whl/torch-1.12.0+cu116.html
 
 %environment
     export LC_ALL=C
-    export PYENV_ROOT=$HOME/.pyenv
-    export PATH=$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH

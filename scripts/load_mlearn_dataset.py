@@ -79,12 +79,14 @@ def load_test_dataset(
     help="One of Cu, Ge, Li, Mo, Ni, Si, and all. 'all' loads the whole six datasets.",
 )
 @click.option("--config_path", type=str, help="Path for config json.")
-def main(raw_datadir: str, element: str, config_path: str):
+@click.option("--accelerator", default="cpu", type=str)
+@click.option("--devices", default=None)
+def main(raw_datadir: str, element: str, config_path: str, accelerator: str, devices):
     # TODO: use hydra
     with open(config_path, "r") as f:
         yaml = YAML()
         config_dict = yaml.load(f)
-    config = RunConfig(**config_dict)
+    config = RunConfig(accelerator=accelerator, devices=devices, **config_dict)
 
     root = Path(config.root)
     elements = ["Cu", "Ge", "Li", "Mo", "Ni", "Si"]
@@ -106,7 +108,7 @@ def main(raw_datadir: str, element: str, config_path: str):
     else:
         raise ValueError(f"Dataset for specified element {element} does not exist.")
 
-    train_model(train, config)
+    train_model(train, test, config)
 
 
 if __name__ == "__main__":

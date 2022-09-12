@@ -20,12 +20,25 @@ python -m pip install torch-scatter torch-sparse torch-cluster torch-spline-conv
 pip install -e ".[dev,docs]"
 ```
 
-### GPU container (w/ pytorch)
+### GPU container (docker, w/ pytorch)
+
+```shell
+docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t m3gnet -f containers/Dockerfile .
+docker run --gpus all -it  -v $(pwd):/home/app -t m3gnet
+
+# In container
+pip install -e ".[dev]"
+```
+
+### GPU container (singularity, w/ pytorch)
 
 ```shell
 singularity build --fakeroot pytorch.sif containers/m3gnet_pytorch.def
 # sudo singularity build --sandbox pytorch.sif containers/m3gnet_pytorch.def
 singularity run --nv pytorch.sif
+
+# In container
+pip install -e ".[dev]"
 ```
 
 ### GPU container for original M3GNet package (w/ tensorflow)
