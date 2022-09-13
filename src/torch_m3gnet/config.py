@@ -6,8 +6,6 @@ from dataclasses import dataclass
 @dataclass
 class RunConfig:
     root: str
-    accelerator: str
-    devices: int | list[int]
     # Hyperparameter for featurization
     cutoff: float = 5.0
     threebody_cutoff: float = 4.0

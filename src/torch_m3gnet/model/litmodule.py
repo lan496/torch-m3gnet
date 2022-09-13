@@ -27,6 +27,9 @@ class LitM3GNet(pl.LightningModule):
         self.decay_steps = decay_steps
 
     def training_step(self, graph: BatchMaterialGraph, batch_idx: int):
+        graph = graph  # to(device)
+        import IPython; IPython.embed(colors='neutral')
+
         target = graph[MaterialGraphKey.TOTAL_ENERGY].clone()
         graph = self.model(graph)
         predicted = graph[MaterialGraphKey.TOTAL_ENERGY]
@@ -39,6 +42,8 @@ class LitM3GNet(pl.LightningModule):
         return loss
 
     def validation_step(self, graph: BatchMaterialGraph, batch_idx: int):
+        graph = graph  # to(device)
+
         target = graph[MaterialGraphKey.TOTAL_ENERGY].clone()
         graph = self.model(graph)
         predicted = graph[MaterialGraphKey.TOTAL_ENERGY]
@@ -48,6 +53,8 @@ class LitM3GNet(pl.LightningModule):
         self.log("val_loss", loss, batch_size=batch_size)
 
     def test_step(self, graph: BatchMaterialGraph, batch_idx: int):
+        graph = graph  # to(device)
+
         target = graph[MaterialGraphKey.TOTAL_ENERGY].clone()
         graph = self.model(graph)
         predicted = graph[MaterialGraphKey.TOTAL_ENERGY]
@@ -68,7 +75,17 @@ def train_model(
     train_and_val: MaterialGraphDataset,
     test: MaterialGraphDataset,
     config: RunConfig,
+    device: str | None = None,
 ):
+    # Device
+    if device.split(':')[0] == 'cuda':
+        assert torch.cuda.is_available()
+        accelerator = 'gpu'
+    elif device == 'cpu':
+        accelerator = 'cpu'
+    else:
+        raise ValueError(f"Unknown or unsupported accelerator: {config.accelerator}")
+
     # Fix seed
     seed = torch.manual_seed(config.seed)
 
@@ -102,6 +119,7 @@ def train_model(
         embedding_dim=config.embedding_dim,
         num_blocks=config.num_blocks,
         elemental_energies=None,
+        device=device,
     )
     litmodel = LitM3GNet(
         model=model,
@@ -116,8 +134,8 @@ def train_model(
             EarlyStopping(monitor="val_loss", mode="min", patience=config.early_stopping_patience)
         ],
         max_epochs=config.max_epochs,
-        accelerator=config.accelerator,
-        devices=config.devices,
+        accelerator=accelerator,
+        devices=1,
     )
     trainer.fit(
         model=litmodel,
