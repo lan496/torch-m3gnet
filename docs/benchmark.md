@@ -11,7 +11,7 @@ git clone git@github.com:materialsvirtuallab/mlearn.git datasets/
 python scripts/load_mlearn_dataset.py --raw_datadir datasets/mlearn/data --element Cu --config_path configs/mlearn_Cu.yaml
 
 # GPU
-python scripts/load_mlearn_dataset.py --raw_datadir datasets/mlearn/data --element Cu --config_path configs/mlearn_Cu.yaml --accelerator gpu
+python scripts/load_mlearn_dataset.py --raw_datadir datasets/mlearn/data --element Cu --config_path configs/mlearn_Cu.yaml --accelerator gpu --devices 1
 ```
 
 Table. 1

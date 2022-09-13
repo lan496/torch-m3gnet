@@ -24,10 +24,18 @@ pip install -e ".[dev,docs]"
 
 ```shell
 docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t m3gnet -f containers/Dockerfile .
-docker run --gpus all -it  -v $(pwd):/home/app -t m3gnet
+
+docker run --gpus all -it  -v $(pwd):/app -t m3gnet
+# Specify GPU
+# docker run --gpus '"device=1"' -it  -v $(pwd):/app -t m3gnet
 
 # In container
 pip install -e ".[dev]"
+
+# Checking
+python -c "import torch; print(torch.__version__); print(torch.cuda.is_available())"
+python -c "import torch; print(torch.version.cuda)"
+python -c "import torch_scatter"
 ```
 
 ### GPU container (singularity, w/ pytorch)

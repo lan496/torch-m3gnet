@@ -14,7 +14,6 @@ REQUIRED = [
     "pytorch-lightning>=1.7.5",
     "torch-scatter",
     "torch-sparse",
-    "torch-spline-conv",
     "torch-geometric",
     "pymatgen>=2022.7.25",
     "ruamel.yaml",  # TODO: use hydra
