@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os
-from functools import cached_property
+from functools import cached_property  # type: ignore
 from pathlib import Path
 
 import torch

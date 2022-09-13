@@ -9,6 +9,7 @@ class GatedMLP(torch.nn.Module):
         in_features: int,
         dimensions: list[int],
         is_output: bool = False,
+        device: torch.device | None = None,
     ):
         super().__init__()
         self.in_features = in_features
@@ -26,13 +27,21 @@ class GatedMLP(torch.nn.Module):
             out_features_i = dimensions[i]
 
             self.dense.append(
-                torch.nn.Linear(in_features=in_features_i, out_features=out_features_i)
+                torch.nn.Linear(
+                    in_features=in_features_i,
+                    out_features=out_features_i,
+                    device=device,
+                )
             )
             if (i < num_layers - 1) and (not self.is_output):
                 self.dense.append(torch.nn.Sigmoid())
 
             self.gate.append(
-                torch.nn.Linear(in_features=in_features_i, out_features=out_features_i)
+                torch.nn.Linear(
+                    in_features=in_features_i,
+                    out_features=out_features_i,
+                    device=device,
+                )
             )
             if i == num_layers - 1:
                 self.gate.append(torch.nn.SiLU())

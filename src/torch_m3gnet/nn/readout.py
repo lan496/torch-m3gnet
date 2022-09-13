@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import torch
 from torch_scatter import scatter_sum
 from torchtyping import TensorType  # type: ignore
@@ -12,6 +14,7 @@ class AtomWiseReadout(torch.nn.Module):
         self,
         in_features: int,
         num_layers: int,
+        device: torch.device | None = None,
     ):
         super().__init__()
         self.in_features = in_features
@@ -21,6 +24,8 @@ class AtomWiseReadout(torch.nn.Module):
         self.gated = GatedMLP(
             in_features=in_features,
             dimensions=dimensions,
+            is_output=True,
+            device=device,
         )
 
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:

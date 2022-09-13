@@ -12,6 +12,12 @@ from torch_m3gnet.model.build import build_energy_model
 
 
 @pytest.fixture
+def device() -> torch.device:
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    return device
+
+
+@pytest.fixture
 def lattice_coords_types() -> tuple[NDArray, NDArray, list[str]]:
     a = 8.01
     lattice = np.eye(3) * a
@@ -56,7 +62,7 @@ def lattice_coords_types() -> tuple[NDArray, NDArray, list[str]]:
 
 
 @pytest.fixture
-def datum() -> list[MaterialGraph]:
+def datum(device: torch.device) -> list[MaterialGraph]:
     r_nn = 3.0  # length to the 1st NN
     structures = [
         # Al-fcc
@@ -81,10 +87,16 @@ def datum() -> list[MaterialGraph]:
     ]
     cutoff = r_nn + 1e-4
     threebody_cutoff = r_nn + 1e-4
-    return [
-        MaterialGraph.from_structure(structure, cutoff=cutoff, threebody_cutoff=threebody_cutoff)
-        for structure in structures
-    ]
+
+    datum = []
+    for structure in structures:
+        graph = MaterialGraph.from_structure(
+            structure, cutoff=cutoff, threebody_cutoff=threebody_cutoff
+        )
+        graph = graph.to(device)
+        datum.append(graph)
+
+    return datum
 
 
 @pytest.fixture
@@ -93,7 +105,7 @@ def graph(datum) -> BatchMaterialGraph:
 
 
 @pytest.fixture
-def model() -> torch.nn.Sequential:
+def model(device: torch.device) -> torch.nn.Sequential:
     model = build_energy_model(
         cutoff=5.0,
         l_max=5,
@@ -101,5 +113,6 @@ def model() -> torch.nn.Sequential:
         num_types=93,
         embedding_dim=61,
         num_blocks=3,
+        device=device,
     )
     return model

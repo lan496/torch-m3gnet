@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import torch
 from torchtyping import TensorType  # type: ignore
 
@@ -9,9 +11,10 @@ class AtomRef(torch.nn.Module):
     def __init__(
         self,
         elemental_energies: TensorType["num_types"],  # type: ignore # noqa: F821
+        device: torch.device | None = None,
     ):
         super().__init__()
-        self.elemental_energies = elemental_energies
+        self.elemental_energies = elemental_energies.to(device)
 
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         atom_types = graph[MaterialGraphKey.ATOM_TYPES]

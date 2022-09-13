@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import torch
 from torch_scatter import scatter_sum
 from torchtyping import TensorType  # type: ignore
@@ -20,6 +22,7 @@ class M3GNetConv(torch.nn.Module):
         degree: int,
         num_node_features: int,
         num_edge_features: int,
+        device: torch.device | None = None,
     ):
         super().__init__()
         self.degree = degree
@@ -30,17 +33,25 @@ class M3GNetConv(torch.nn.Module):
         self.concat_edge_update = GatedMLP(
             in_features=self.num_concat_features,
             dimensions=[self.num_edge_features, self.num_edge_features],
+            device=device,
         )
         self.edge_linear = torch.nn.Linear(
-            in_features=self.degree, out_features=self.num_edge_features, bias=False
+            in_features=self.degree,
+            out_features=self.num_edge_features,
+            bias=False,
+            device=device,
         )
 
         self.concat_node_update = GatedMLP(
             in_features=self.num_concat_features,
             dimensions=[self.num_edge_features, self.num_node_features],
+            device=device,
         )
         self.node_linear = torch.nn.Linear(
-            in_features=self.degree, out_features=self.num_node_features, bias=False
+            in_features=self.degree,
+            out_features=self.num_node_features,
+            bias=False,
+            device=device,
         )
 
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:

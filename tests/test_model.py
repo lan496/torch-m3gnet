@@ -37,10 +37,10 @@ def test_three_body_interaction(model, graph: BatchMaterialGraph):
     assert not torch.any(torch.isnan(edge_features1))
 
 
-def test_rotation_invariance(model, lattice_coords_types):
+def test_rotation_invariance(model, lattice_coords_types, device):
     lattice, cart_coords, species = lattice_coords_types
     structure = Structure(lattice, species, cart_coords, coords_are_cartesian=True)
-    graph = Batch.from_data_list([MaterialGraph.from_structure(structure, 5.0, 4.0)])
+    graph = Batch.from_data_list([MaterialGraph.from_structure(structure, 5.0, 4.0).to(device)])
 
     graph = model(graph)
     node_features = graph[MaterialGraphKey.NODE_FEATURES]
@@ -64,7 +64,7 @@ def test_rotation_invariance(model, lattice_coords_types):
     assert np.allclose(np.dot(rotation, rotation.T), np.eye(3))
     lattice2, cart_coords2 = rotate_cell(lattice, cart_coords, rotation)
     structure2 = Structure(lattice2, species, cart_coords2, coords_are_cartesian=True)
-    graph2 = Batch.from_data_list([MaterialGraph.from_structure(structure2, 5.0, 4.0)])
+    graph2 = Batch.from_data_list([MaterialGraph.from_structure(structure2, 5.0, 4.0).to(device)])
 
     graph2 = model(graph2)
     node_features2 = graph2[MaterialGraphKey.NODE_FEATURES]

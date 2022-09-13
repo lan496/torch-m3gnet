@@ -19,19 +19,20 @@ def build_energy_model(
     embedding_dim: int,
     num_blocks: int,
     elemental_energies: TensorType["num_types"] | None = None,  # type: ignore # noqa: F821
+    device: torch.device | None = None,
 ) -> torch.nn.Sequential:
     degree = n_max * l_max
     num_edge_features = embedding_dim
 
     if elemental_energies is None:
-        elemental_energies = torch.zeros(num_types)
+        elemental_energies = torch.zeros(num_types, device=device)
 
     model = torch.nn.Sequential(
-        AtomRef(elemental_energies),
+        AtomRef(elemental_energies, device=device),
         DistanceAndAngle(),
-        EdgeFeaturizer(degree=degree, cutoff=cutoff),
-        EdgeAdjustor(degree=degree, num_edge_features=num_edge_features),
-        AtomFeaturizer(num_types=num_types, embedding_dim=embedding_dim),
+        EdgeFeaturizer(degree=degree, cutoff=cutoff, device=device),
+        EdgeAdjustor(degree=degree, num_edge_features=num_edge_features, device=device),
+        AtomFeaturizer(num_types=num_types, embedding_dim=embedding_dim, device=device),
     )
 
     # Convolutions
@@ -43,6 +44,7 @@ def build_energy_model(
                 n_max=n_max,
                 num_node_features=embedding_dim,
                 num_edge_features=num_edge_features,
+                device=device,
             )
         )
         model.append(
@@ -50,6 +52,7 @@ def build_energy_model(
                 degree=degree,
                 num_node_features=embedding_dim,
                 num_edge_features=num_edge_features,
+                device=device,
             )
         )
 
@@ -58,6 +61,7 @@ def build_energy_model(
         AtomWiseReadout(
             in_features=embedding_dim,
             num_layers=3,
+            device=device,
         )
     )
 

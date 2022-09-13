@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 
 import torch
@@ -146,6 +148,7 @@ class ThreeBodyInteration(torch.nn.Module):
         n_max: int,
         num_node_features: int,
         num_edge_features: int,
+        device: torch.device | None = None,
     ):
         super().__init__()
 
@@ -156,17 +159,18 @@ class ThreeBodyInteration(torch.nn.Module):
         self.num_node_features = num_node_features
         self.num_edge_features = num_edge_features
 
-        self.spherical_bessel_zeros = torch.tensor(SPHERICAL_BESSEL_ZEROS)
+        self.spherical_bessel_zeros = torch.tensor(SPHERICAL_BESSEL_ZEROS, device=device)
         if self.spherical_bessel_zeros.size(0) < self.l_max:
             raise ValueError("Too large l_max is specified.")
         if self.spherical_bessel_zeros.size(1) < self.n_max:
             raise ValueError("Too large n_max is specified.")
         self.spherical_bessel_zeros = self.spherical_bessel_zeros[: self.l_max, : self.n_max]
 
-        self.linear_sigmoid1 = torch.nn.Linear(self.num_node_features, self.degree)
+        self.linear_sigmoid1 = torch.nn.Linear(self.num_node_features, self.degree, device=device)
         self.gated_mlp = GatedMLP(
             in_features=self.degree,
             dimensions=[self.num_edge_features],
+            device=device,
         )
 
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:

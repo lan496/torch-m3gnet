@@ -15,7 +15,10 @@ from torch_m3gnet.nn.invariant import DistanceAndAngle
 from torch_m3gnet.utils import rotate_cell
 
 
-def test_distance_angle(graph: BatchMaterialGraph, datum: list[MaterialGraph]):
+def test_distance_angle(
+    graph: BatchMaterialGraph,
+    datum: list[MaterialGraph],
+):
     model = DistanceAndAngle()
     graph = model(graph)
 
@@ -76,20 +79,20 @@ def test_invariance(lattice_coords_types):
     )
 
 
-def test_edge_featurizer(graph: BatchMaterialGraph):
+def test_edge_featurizer(graph: BatchMaterialGraph, device: torch.device):
     degree = 3
     model = torch.nn.Sequential(
         DistanceAndAngle(),
-        EdgeFeaturizer(degree=degree, cutoff=5.0),
+        EdgeFeaturizer(degree=degree, cutoff=5.0, device=device),
     )
     graph = model(graph)
     assert not torch.any(torch.isnan(graph[MaterialGraphKey.EDGE_WEIGHTS]))
     assert graph[MaterialGraphKey.EDGE_WEIGHTS].size(1) == degree
 
 
-def test_atom_featurizer(graph: BatchMaterialGraph):
+def test_atom_featurizer(graph: BatchMaterialGraph, device: torch.device):
     embedding_dim = 64
-    model = AtomFeaturizer(num_types=15, embedding_dim=embedding_dim)
+    model = AtomFeaturizer(num_types=15, embedding_dim=embedding_dim, device=device)
     graph = model(graph)
     assert graph[MaterialGraphKey.NODE_FEATURES].size(1) == embedding_dim
     assert not torch.any(torch.isnan(graph[MaterialGraphKey.NODE_FEATURES]))
