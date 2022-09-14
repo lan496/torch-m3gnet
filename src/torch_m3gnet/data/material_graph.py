@@ -130,7 +130,7 @@ class MaterialGraph(Data):
         threebody_cutoff: float,
     ) -> MaterialGraph:
         lattice = torch.as_tensor(structure.lattice.matrix.copy(), dtype=torch.float)
-        pos = torch.tensor(structure.cart_coords, dtype=torch.float, requires_grad=True)
+        pos = torch.tensor(structure.cart_coords, dtype=torch.float)
 
         edge_index, edge_cell_shift, distances = get_all_neighbors_with_cell_shifts(
             structure, cutoff

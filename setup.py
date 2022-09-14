@@ -15,9 +15,11 @@ REQUIRED = [
     "torch-scatter",
     "torch-sparse",
     "torch-geometric",
+    "torchmetrics",
     "pymatgen>=2022.7.25",
     "ruamel.yaml",  # TODO: use hydra
     "joblib",
+    "scikit-learn",
 ]
 
 EXTRAS = {

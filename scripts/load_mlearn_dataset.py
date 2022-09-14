@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from pathlib import Path
 
@@ -79,8 +81,17 @@ def load_test_dataset(
     help="One of Cu, Ge, Li, Mo, Ni, Si, and all. 'all' loads the whole six datasets.",
 )
 @click.option("--config_path", type=str, help="Path for config json.")
-@click.option("--device", default=None, help="cuda or cpu")
-def main(raw_datadir: str, element: str, config_path: str, device: str):
+@click.option("--resume_ckpt_path", default=None, type=str)
+@click.option("--device", default="cpu", help="cuda or cpu")
+@click.option("--num_workers", default=-1, type=int)
+def main(
+    raw_datadir: str,
+    element: str,
+    config_path: str,
+    resume_ckpt_path: str | None,
+    device: str,
+    num_workers: int,
+):
     # TODO: use hydra
     with open(config_path, "r") as f:
         yaml = YAML()
@@ -107,7 +118,14 @@ def main(raw_datadir: str, element: str, config_path: str, device: str):
     else:
         raise ValueError(f"Dataset for specified element {element} does not exist.")
 
-    train_model(train, test, config, device)
+    train_model(
+        train_and_val=train,
+        test=test,
+        config=config,
+        resume_ckpt_path=resume_ckpt_path,
+        device=device,
+        num_workers=num_workers,
+    )
 
 
 if __name__ == "__main__":

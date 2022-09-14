@@ -1,11 +1,17 @@
+from __future__ import annotations
+
 import os
 
+import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
+import torchmetrics
+from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from sklearn.linear_model import LinearRegression
 from torch.utils.data import random_split
-from torch_geometric.loader import DataLoader
+from torch_geometric.data import LightningDataset
 
 from torch_m3gnet.config import RunConfig
 from torch_m3gnet.data import MaterialGraphKey
@@ -25,43 +31,55 @@ class LitM3GNet(pl.LightningModule):
         self.model = model
         self.learning_rate = learning_rate
         self.decay_steps = decay_steps
+        self.mae = torchmetrics.MeanAbsoluteError()
 
     def training_step(self, graph: BatchMaterialGraph, batch_idx: int):
-        graph = graph  # to(device)
-        import IPython; IPython.embed(colors='neutral')
-
-        target = graph[MaterialGraphKey.TOTAL_ENERGY].clone()
-        graph = self.model(graph)
-        predicted = graph[MaterialGraphKey.TOTAL_ENERGY]
-        loss = F.mse_loss(predicted, target)
+        batch_size = graph[MaterialGraphKey.TOTAL_ENERGY].size(0)
+        metrics = self._loss_fn(graph, batch_size)
 
         # Step scheduler every epoch
         if self.trainer.is_last_batch == 0:
             sch = self.lr_schedulers()
             sch.step()
-        return loss
+        return metrics["loss"]
 
     def validation_step(self, graph: BatchMaterialGraph, batch_idx: int):
-        graph = graph  # to(device)
+        batch_size = graph[MaterialGraphKey.TOTAL_ENERGY].size(0)
+        metrics = self._loss_fn(graph, batch_size)
 
-        target = graph[MaterialGraphKey.TOTAL_ENERGY].clone()
-        graph = self.model(graph)
-        predicted = graph[MaterialGraphKey.TOTAL_ENERGY]
-        loss = F.mse_loss(predicted, target)
-
-        batch_size = target.size(0)
-        self.log("val_loss", loss, batch_size=batch_size)
+        self.log_dict(
+            {f"val_{key}": val for key, val in metrics.items()},
+            batch_size=batch_size,
+            prog_bar=True,
+        )
 
     def test_step(self, graph: BatchMaterialGraph, batch_idx: int):
-        graph = graph  # to(device)
+        batch_size = graph[MaterialGraphKey.TOTAL_ENERGY].size(0)
+        metrics = self._loss_fn(graph, batch_size)
 
-        target = graph[MaterialGraphKey.TOTAL_ENERGY].clone()
+        self.log_dict(
+            {f"test_{key}": val for key, val in metrics.items()},
+            batch_size=batch_size,
+            prog_bar=True,
+        )
+
+    def _loss_fn(self, graph: BatchMaterialGraph, batch_size: int):
+        num_nodes_per_graph = torch.bincount(
+            graph[MaterialGraphKey.BATCH],
+            minlength=batch_size,
+        )
+        target = graph[MaterialGraphKey.TOTAL_ENERGY].clone() / num_nodes_per_graph
         graph = self.model(graph)
-        predicted = graph[MaterialGraphKey.TOTAL_ENERGY]
+        predicted = graph[MaterialGraphKey.TOTAL_ENERGY] / num_nodes_per_graph
+        # MSE of energy per atom
         loss = F.mse_loss(predicted, target)
 
-        batch_size = target.size(0)
-        self.log("test_loss", loss, batch_size=batch_size)
+        metrics = {
+            "loss": loss,
+            "rmse": torch.sqrt(loss),
+            "mae": self.mae(predicted, target),
+        }
+        return metrics
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
@@ -75,40 +93,45 @@ def train_model(
     train_and_val: MaterialGraphDataset,
     test: MaterialGraphDataset,
     config: RunConfig,
+    resume_ckpt_path: str | None = None,
     device: str | None = None,
+    num_workers: int = -1,
 ):
     # Device
-    if device.split(':')[0] == 'cuda':
+    if device and device.split(":")[0] == "cuda":
         assert torch.cuda.is_available()
-        accelerator = 'gpu'
-    elif device == 'cpu':
-        accelerator = 'cpu'
+        accelerator = "gpu"
+    elif device == "cpu":
+        accelerator = "cpu"
     else:
-        raise ValueError(f"Unknown or unsupported accelerator: {config.accelerator}")
+        raise ValueError(f"Unknown or unsupported device: {device}")
 
     # Fix seed
-    seed = torch.manual_seed(config.seed)
+    seed_everything(config.seed, workers=True)
 
     # Split dataset
     val_size = int(len(train_and_val) * config.val_ratio)
     train_size = len(train_and_val) - val_size
-    train, val = random_split(train_and_val, [train_size, val_size], generator=seed)
+    train, val = random_split(
+        train_and_val,
+        [train_size, val_size],
+        generator=torch.Generator().manual_seed(config.seed),
+    )
 
     # Data loader
-    num_workers = config.num_workers
     if num_workers == -1:
         num_workers = os.cpu_count()  # type: ignore
-    train_loader = DataLoader(
-        train, batch_size=config.batch_size, shuffle=True, num_workers=num_workers
-    )
-    val_loader = DataLoader(
-        val, batch_size=config.batch_size, shuffle=False, num_workers=num_workers
-    )
-    test_loader = DataLoader(
-        test, batch_size=config.batch_size, shuffle=False, num_workers=num_workers
+    datamodule = LightningDataset(
+        train_dataset=train,
+        val_dataset=val,
+        test_dataset=test,
+        batch_size=config.batch_size,
+        num_workers=num_workers,
     )
 
-    # TODO: fit elemental_energies
+    scaled_elemental_energies, mean, std = fit_elemental_energies(
+        train.dataset, config.num_types, device
+    )
 
     # Model
     model = build_energy_model(
@@ -118,7 +141,9 @@ def train_model(
         num_types=config.num_types,
         embedding_dim=config.embedding_dim,
         num_blocks=config.num_blocks,
-        elemental_energies=None,
+        scaled_elemental_energies=scaled_elemental_energies,
+        mean=mean,
+        std=std,
         device=device,
     )
     litmodel = LitM3GNet(
@@ -139,9 +164,26 @@ def train_model(
     )
     trainer.fit(
         model=litmodel,
-        train_dataloaders=train_loader,
-        val_dataloaders=val_loader,
+        datamodule=datamodule,
+        ckpt_path=resume_ckpt_path,
     )
 
     # Test
-    trainer.test(model, dataloaders=test_loader)
+    trainer.test(
+        model=litmodel,
+        datamodule=datamodule,
+    )
+
+
+def fit_elemental_energies(dataset: MaterialGraphDataset, num_types: int, device: torch.device):
+    X_all = []
+    for graph in dataset:
+        one_hot = torch.nn.functional.one_hot(graph[MaterialGraphKey.ATOM_TYPES], num_types)
+        X_all.append(torch.sum(one_hot, dim=0).to(torch.float32))
+    X_all = torch.stack(X_all).detach().numpy()  # (num_structures, num_types)
+    y_all = dataset.data[MaterialGraphKey.TOTAL_ENERGY].numpy()  # (num_structures, )
+    mean = np.mean(y_all)
+    std = np.std(y_all)
+    reg = LinearRegression(fit_intercept=False).fit(X_all, (y_all - mean) / std)
+    scaled_elemental_energies = torch.tensor(reg.coef_, device=device)
+    return scaled_elemental_energies, mean, std

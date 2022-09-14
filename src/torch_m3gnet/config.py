@@ -24,5 +24,3 @@ class RunConfig:
     early_stopping_patience: int = 200
     # Misc
     seed: int = 0
-    # Devices
-    num_workers: int = -1

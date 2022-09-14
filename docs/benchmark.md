@@ -8,10 +8,10 @@
 git clone git@github.com:materialsvirtuallab/mlearn.git datasets/
 
 # CPU
-python scripts/load_mlearn_dataset.py --raw_datadir datasets/mlearn/data --element Cu --config_path configs/mlearn_Cu.yaml
+python scripts/load_mlearn_dataset.py --raw_datadir datasets/mlearn/data --element Cu --config_path configs/mlearn_Cu.yaml --num_workers 1
 
 # GPU
-python scripts/load_mlearn_dataset.py --raw_datadir datasets/mlearn/data --element Cu --config_path configs/mlearn_Cu.yaml --device cuda
+python scripts/load_mlearn_dataset.py --raw_datadir datasets/mlearn/data --element Cu --config_path configs/mlearn_Cu.yaml --device cuda --num_workers 1
 ```
 
 Table. 1
