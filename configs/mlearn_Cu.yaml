@@ -1,1 +1,3 @@
 root: results/mlearn_Cu
+batch_size: 16
+accumulate_grad_batches: 2

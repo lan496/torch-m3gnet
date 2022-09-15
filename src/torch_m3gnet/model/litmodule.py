@@ -7,6 +7,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 import torchmetrics
+from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from sklearn.linear_model import LinearRegression
@@ -26,41 +27,60 @@ class LitM3GNet(pl.LightningModule):
         model: torch.nn.Module,
         learning_rate: float,
         decay_steps: int,
+        force_weight: float,
+        stress_weight: float,
     ):
         super().__init__()
         self.model = model
         self.learning_rate = learning_rate
         self.decay_steps = decay_steps
+        self.force_weight = force_weight
+        self.stress_weight = stress_weight
+
         self.mae = torchmetrics.MeanAbsoluteError()
 
     def training_step(self, graph: BatchMaterialGraph, batch_idx: int):
         batch_size = graph[MaterialGraphKey.TOTAL_ENERGY].size(0)
         metrics = self._loss_fn(graph, batch_size)
 
-        # Step scheduler every epoch
-        if self.trainer.is_last_batch == 0:
-            sch = self.lr_schedulers()
-            sch.step()
+        # https://blog.ceshine.net/post/pytorch-lightning-grad-accu/
+        if batch_idx % self.trainer.accumulate_grad_batches == 0:
+            self.log_dict(
+                {f"train_{key}": val for key, val in metrics.items()},
+                batch_size=batch_size,
+            )
+
         return metrics["loss"]
 
+    def training_epoch_end(self, outputs):
+        # Step scheduler every epoch
+        sch = self.lr_schedulers()
+        sch.step()
+
+        return super().training_epoch_end(outputs)
+
     def validation_step(self, graph: BatchMaterialGraph, batch_idx: int):
+        # grad is disabled in validation by default
+        # https://github.com/Lightning-AI/lightning/issues/4487
+        torch.set_grad_enabled(True)
+
         batch_size = graph[MaterialGraphKey.TOTAL_ENERGY].size(0)
         metrics = self._loss_fn(graph, batch_size)
 
         self.log_dict(
             {f"val_{key}": val for key, val in metrics.items()},
             batch_size=batch_size,
-            prog_bar=True,
         )
 
     def test_step(self, graph: BatchMaterialGraph, batch_idx: int):
+        torch.set_grad_enabled(True)
+
         batch_size = graph[MaterialGraphKey.TOTAL_ENERGY].size(0)
         metrics = self._loss_fn(graph, batch_size)
 
         self.log_dict(
             {f"test_{key}": val for key, val in metrics.items()},
             batch_size=batch_size,
-            prog_bar=True,
         )
 
     def _loss_fn(self, graph: BatchMaterialGraph, batch_size: int):
@@ -68,16 +88,27 @@ class LitM3GNet(pl.LightningModule):
             graph[MaterialGraphKey.BATCH],
             minlength=batch_size,
         )
-        target = graph[MaterialGraphKey.TOTAL_ENERGY].clone() / num_nodes_per_graph
+        target_energy = graph[MaterialGraphKey.TOTAL_ENERGY].clone() / num_nodes_per_graph
+        target_forces = graph[MaterialGraphKey.FORCES].clone()
+
+        # Forward
         graph = self.model(graph)
-        predicted = graph[MaterialGraphKey.TOTAL_ENERGY] / num_nodes_per_graph
-        # MSE of energy per atom
-        loss = F.mse_loss(predicted, target)
+
+        predicted_energy = graph[MaterialGraphKey.TOTAL_ENERGY] / num_nodes_per_graph
+        predicted_forces = graph[MaterialGraphKey.FORCES]
+
+        energy_loss = F.mse_loss(predicted_energy, target_energy, reduction="mean")  # eV/atom
+        forces_loss = F.mse_loss(predicted_forces, target_forces, reduction="mean")  # eV/AA
+        loss = energy_loss + self.force_weight * forces_loss
 
         metrics = {
             "loss": loss,
-            "rmse": torch.sqrt(loss),
-            "mae": self.mae(predicted, target),
+            "energy_loss": energy_loss,
+            "forces_loss": forces_loss,
+            "energy_rmse": torch.sqrt(energy_loss),
+            "forces_rmse": torch.sqrt(forces_loss),
+            "energy_mae": self.mae(predicted_energy, target_energy),
+            "forces_mae": self.mae(predicted_forces, target_forces),
         }
         return metrics
 
@@ -150,7 +181,14 @@ def train_model(
         model=model,
         learning_rate=config.learning_rate,
         decay_steps=config.decay_steps,
+        force_weight=config.force_weight,
+        stress_weight=config.stress_weight,
     )
+
+    # Logging
+    log_save_dir = f"{config.root}/logs"
+    tb_logger = pl_loggers.TensorBoardLogger(save_dir=log_save_dir)
+    csv_logger = pl_loggers.CSVLogger(save_dir=log_save_dir)
 
     # Trainer
     trainer = pl.Trainer(
@@ -159,6 +197,8 @@ def train_model(
             EarlyStopping(monitor="val_loss", mode="min", patience=config.early_stopping_patience)
         ],
         max_epochs=config.max_epochs,
+        accumulate_grad_batches=config.accumulate_grad_batches,
+        logger=[tb_logger, csv_logger],
         accelerator=accelerator,
         devices=1,
     )

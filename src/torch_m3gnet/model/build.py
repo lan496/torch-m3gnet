@@ -6,6 +6,7 @@ from torchtyping import TensorType  # type: ignore
 from torch_m3gnet.nn.atom_ref import AtomRef
 from torch_m3gnet.nn.conv import M3GNetConv
 from torch_m3gnet.nn.featurizer import AtomFeaturizer, EdgeAdjustor, EdgeFeaturizer
+from torch_m3gnet.nn.gradient import Gradient
 from torch_m3gnet.nn.interaction import ThreeBodyInteration
 from torch_m3gnet.nn.invariant import DistanceAndAngle
 from torch_m3gnet.nn.readout import AtomWiseReadout
@@ -68,5 +69,8 @@ def build_energy_model(
             device=device,
         )
     )
+
+    # Attach forces
+    model = Gradient(model)
 
     return model

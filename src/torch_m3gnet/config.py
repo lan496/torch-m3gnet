@@ -20,7 +20,10 @@ class RunConfig:
     learning_rate: float = 1e-3
     decay_steps: int = 100
     batch_size: int = 32
+    accumulate_grad_batches: int = 1
     val_ratio: float = 0.2
     early_stopping_patience: int = 200
+    force_weight: float = 1.0
+    stress_weight: float = 0.1
     # Misc
     seed: int = 0

@@ -79,3 +79,34 @@ def test_backward(model, graph: BatchMaterialGraph):
         graph = model(graph)
         s = torch.sum(graph[MaterialGraphKey.TOTAL_ENERGY])
         s.backward()
+
+
+def test_gradient(model, graph):
+    # Perturb positions
+    torch.manual_seed(0)
+    graph[MaterialGraphKey.POS] += 1e-1 * (torch.rand(graph[MaterialGraphKey.POS].shape) - 0.5)
+
+    graph = model(graph)
+    forces_actual = graph[MaterialGraphKey.FORCES].clone()
+
+    delta = 1e-2
+    for node_idx in range(graph[MaterialGraphKey.NUM_NODES]):
+        batch_idx = graph[MaterialGraphKey.BATCH][node_idx]
+        for direction in range(3):
+            graph_plus = graph.clone()
+            graph_plus[MaterialGraphKey.POS][node_idx, direction] += delta
+            graph_plus = model(graph_plus)
+            energy_plus = graph_plus[MaterialGraphKey.TOTAL_ENERGY][batch_idx]
+
+            graph_minus = graph.clone()
+            graph_minus[MaterialGraphKey.POS][node_idx, direction] -= delta
+            graph_minus = model(graph_minus)
+            energy_minus = graph_minus[MaterialGraphKey.TOTAL_ENERGY][batch_idx]
+
+            force_expect = -(energy_plus - energy_minus) / (2 * delta)
+            torch.testing.assert_close(
+                forces_actual[node_idx, direction],
+                force_expect,
+                atol=1e-4,
+                rtol=1e-4,
+            )
