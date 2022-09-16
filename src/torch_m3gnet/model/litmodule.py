@@ -19,7 +19,7 @@ from torch_m3gnet.config import RunConfig
 from torch_m3gnet.data import MaterialGraphKey
 from torch_m3gnet.data.dataset import MaterialGraphDataset
 from torch_m3gnet.data.material_graph import BatchMaterialGraph
-from torch_m3gnet.model.build import build_energy_model
+from torch_m3gnet.model.build import build_model
 
 
 class LitM3GNet(pl.LightningModule):
@@ -119,6 +119,11 @@ class LitM3GNet(pl.LightningModule):
             scheduler,
         ]
 
+    def on_test_model_eval(self, *args, **kwargs):
+        # https://github.com/Lightning-AI/lightning/issues/10287
+        super().on_test_model_eval(*args, **kwargs)
+        torch.set_grad_enabled(True)
+
 
 def train_model(
     train_and_val: MaterialGraphDataset,
@@ -128,14 +133,7 @@ def train_model(
     device: str | None = None,
     num_workers: int = -1,
 ):
-    # Device
-    if device and device.split(":")[0] == "cuda":
-        assert torch.cuda.is_available()
-        accelerator = "gpu"
-    elif device == "cpu":
-        accelerator = "cpu"
-    else:
-        raise ValueError(f"Unknown or unsupported device: {device}")
+    accelerator = get_accelerator(device)
 
     # Fix seed
     seed_everything(config.seed, workers=True)
@@ -165,7 +163,7 @@ def train_model(
     )
 
     # Model
-    model = build_energy_model(
+    model = build_model(
         cutoff=config.cutoff,
         l_max=config.l_max,
         n_max=config.n_max,
@@ -210,6 +208,21 @@ def train_model(
         model=litmodel,
         datamodule=datamodule,
     )
+
+
+def get_accelerator(device: str | torch.device | None) -> str:
+    if isinstance(device, torch.device):
+        device_str = device.type
+    else:
+        device_str = device
+
+    if device_str and device_str.split(":")[0] == "cuda":
+        assert torch.cuda.is_available()
+        accelerator = "gpu"
+    elif device_str == "cpu":
+        accelerator = "cpu"
+
+    return accelerator
 
 
 def fit_elemental_energies(

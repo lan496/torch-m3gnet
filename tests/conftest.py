@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 import torch
@@ -7,14 +9,37 @@ from numpy.typing import NDArray
 from pymatgen.core import Structure
 from torch_geometric.data import Batch
 
+from torch_m3gnet.config import RunConfig
+from torch_m3gnet.data.dataset import MaterialGraphDataset
 from torch_m3gnet.data.material_graph import BatchMaterialGraph, MaterialGraph
-from torch_m3gnet.model.build import build_energy_model
+from torch_m3gnet.model.build import build_model
 
 
 @pytest.fixture
 def device() -> torch.device:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     return device
+
+
+@pytest.fixture
+def rotation() -> NDArray:
+    rotation = np.dot(
+        np.array(
+            [
+                [1 / 2, np.sqrt(3) / 2, 0],
+                [-np.sqrt(3) / 2, 1 / 2, 0],
+                [0, 0, 1],
+            ]
+        ),
+        np.array(
+            [
+                [0, 0, 1],
+                [1 / np.sqrt(2), -1 / np.sqrt(2), 0],
+                [1 / np.sqrt(2), 1 / np.sqrt(2), 0],
+            ]
+        ),
+    )
+    return rotation
 
 
 @pytest.fixture
@@ -62,7 +87,7 @@ def lattice_coords_types() -> tuple[NDArray, NDArray, list[str]]:
 
 
 @pytest.fixture
-def datum(device: torch.device) -> list[MaterialGraph]:
+def structures_and_cutoffs() -> tuple[list[Structure], float, float]:
     r_nn = 3.0  # length to the 1st NN
     structures = [
         # Al-fcc
@@ -87,7 +112,12 @@ def datum(device: torch.device) -> list[MaterialGraph]:
     ]
     cutoff = r_nn + 1e-4
     threebody_cutoff = r_nn + 1e-4
+    return structures, cutoff, threebody_cutoff
 
+
+@pytest.fixture
+def datum(structures_and_cutoffs, device: torch.device) -> list[MaterialGraph]:
+    structures, cutoff, threebody_cutoff = structures_and_cutoffs
     datum = []
     for structure in structures:
         graph = MaterialGraph.from_structure(
@@ -105,14 +135,45 @@ def graph(datum) -> BatchMaterialGraph:
 
 
 @pytest.fixture
-def model(device: torch.device) -> torch.nn.Sequential:
-    model = build_energy_model(
-        cutoff=5.0,
-        l_max=5,
+def dataset(tmpdir: Path, structures_and_cutoffs) -> MaterialGraphDataset:
+    structures, cutoff, threebody_cutoff = structures_and_cutoffs
+
+    energies = np.zeros(len(structures))
+    forces = [np.zeros((len(structure), 3)) for structure in structures]
+    stresses = [np.zeros(6) for _ in structures]
+    dataset = MaterialGraphDataset(
+        tmpdir / "dataset", structures, energies, forces, stresses, cutoff, threebody_cutoff
+    )
+    return dataset
+
+
+@pytest.fixture
+def config(dataset: MaterialGraphDataset) -> RunConfig:
+    config = RunConfig(
+        root=dataset.root,
+        cutoff=dataset.cutoff,
+        threebody_cutoff=dataset.threebody_cutoff,
+        l_max=2,
         n_max=3,
         num_types=93,
-        embedding_dim=61,
-        num_blocks=3,
+        embedding_dim=5,
+        num_blocks=2,
+        batch_size=len(dataset),  # As single batch
+    )
+    return config
+
+
+@pytest.fixture
+def model(config: RunConfig, device: torch.device) -> torch.nn.Sequential:
+    model = build_model(
+        cutoff=config.cutoff,
+        l_max=config.l_max,
+        n_max=config.n_max,
+        num_types=config.num_types,
+        embedding_dim=config.embedding_dim,
+        num_blocks=config.num_blocks,
+        # scaled_elemental_energies=scaled_elemental_energies,
+        # scale=scale,
         device=device,
     )
     return model

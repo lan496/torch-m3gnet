@@ -2,7 +2,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from pymatgen.core import Structure
 
 from torch_m3gnet.data import MaterialGraphKey
 from torch_m3gnet.data.dataset import MaterialGraphDataset
@@ -24,35 +23,12 @@ def test_batch(graph):
     )
 
 
-def test_dataset(tmpdir: Path):
-    r_nn = 3.0  # length to the 1st NN
-    structures = [
-        # Al-fcc
-        Structure(
-            lattice=r_nn * np.sqrt(2) * np.eye(3),
-            species=["Al", "Al", "Al", "Al"],
-            coords=[
-                [0, 0, 0],
-                [0, 0.5, 0.5],
-                [0.5, 0, 0.5],
-                [0.5, 0.5, 0],
-            ],
-        ),
-        Structure(
-            lattice=r_nn / np.sqrt(3) * 2 * np.eye(3),
-            species=["Na", "Na"],
-            coords=[
-                [0, 0, 0],
-                [0.5, 0.5, 0.5],
-            ],
-        ),
-    ]
-    cutoff = r_nn + 1e-4
-    threebody_cutoff = r_nn + 1e-4
+def test_dataset(tmpdir: Path, structures_and_cutoffs):
+    structures, cutoff, threebody_cutoff = structures_and_cutoffs
 
-    energies = [2.0, -3.0]
-    forces = np.zeros((2, 3))
-    stresses = np.zeros((2, 6))
+    energies = np.zeros(len(structures))
+    forces = [np.zeros((len(structure), 3)) for structure in structures]
+    stresses = [np.zeros(6) for _ in structures]
     MaterialGraphDataset(tmpdir, structures, energies, forces, stresses, cutoff, threebody_cutoff)
     # Load processed dataset for second time
     MaterialGraphDataset(tmpdir, structures, energies, forces, stresses, cutoff, threebody_cutoff)

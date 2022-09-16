@@ -1,6 +1,12 @@
 # torch-m3gnet
+[![testing](https://github.com/lan496/torch-m3gnet/actions/workflows/testing.yml/badge.svg)](https://github.com/lan496/torch-m3gnet/actions/workflows/testing.yml)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/lan496/torch-m3gnet/main.svg)](https://results.pre-commit.ci/latest/github/lan496/torch-m3gnet/main)
+[![codecov](https://codecov.io/gh/lan496/torch-m3gnet/branch/main/graph/badge.svg?token=I1J0RYFGP8)](https://codecov.io/gh/lan496/torch-m3gnet)
+[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 **This is an unofficial PyTorch implementation of M3GNet. The authors' reimplementation of MEGNet and M3GNet with PyTorch/DGL will be available [here](https://github.com/materialsvirtuallab/m3gnet-dgl).**
+
+- Documentation <https://lan496.github.io/torch-m3gnet/>
 
 ## Limitations
 

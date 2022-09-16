@@ -23,8 +23,8 @@ class MaterialGraphDataset(InMemoryDataset):
         root: Path | str,
         structures: list[Structure],
         energies: NDArray,  # (num_sites, )
-        forces: NDArray,  # (num_sites, 3)
-        stresses: NDArray,  # (num_sites, 6)
+        forces: list[NDArray],  # list of (num_sites, 3)
+        stresses: list[NDArray],  # list of (6, )
         cutoff: float,
         threebody_cutoff: float,
         n_jobs: int = -1,

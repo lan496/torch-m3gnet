@@ -38,27 +38,11 @@ def test_distance_angle(
     torch.testing.assert_close(angles, angles2)
 
 
-def test_invariance(lattice_coords_types):
+def test_invariance(lattice_coords_types, rotation):
     lattice, cart_coords, species = lattice_coords_types
     structure = Structure(lattice, species, cart_coords, coords_are_cartesian=True)
     graph = Batch.from_data_list([MaterialGraph.from_structure(structure, 5.0, 4.0)])
 
-    rotation = np.dot(
-        np.array(
-            [
-                [1 / 2, np.sqrt(3) / 2, 0],
-                [-np.sqrt(3) / 2, 1 / 2, 0],
-                [0, 0, 1],
-            ]
-        ),
-        np.array(
-            [
-                [0, 0, 1],
-                [1 / np.sqrt(2), -1 / np.sqrt(2), 0],
-                [1 / np.sqrt(2), 1 / np.sqrt(2), 0],
-            ]
-        ),
-    )
     assert np.allclose(np.dot(rotation, rotation.T), np.eye(3))
     lattice2, cart_coords2 = rotate_cell(lattice, cart_coords, rotation)
     structure2 = Structure(lattice2, species, cart_coords2, coords_are_cartesian=True)
