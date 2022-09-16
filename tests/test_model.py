@@ -107,6 +107,6 @@ def test_gradient(model, graph):
             torch.testing.assert_close(
                 forces_actual[node_idx, direction],
                 force_expect,
-                atol=1e-4,
-                rtol=1e-4,
+                atol=1e-3,
+                rtol=1e-2,
             )
