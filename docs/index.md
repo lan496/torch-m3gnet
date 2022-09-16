@@ -4,6 +4,7 @@ caption: Contents
 hidden:
 ---
    Introduction <self>
+   Installation <installation>
    Architecture <architecture>
    Forces and virial stress <gradient>
    Benchmark <benchmark>
@@ -11,4 +12,5 @@ hidden:
 ```
 
 ```{include} ../README.md
+:relative-docs: docs/
 ```
