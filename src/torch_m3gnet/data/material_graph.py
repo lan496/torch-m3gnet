@@ -50,9 +50,13 @@ class MaterialGraph(Data):
         Edge features
 
     atomic_energy: (num_nodes, )
+        eV/atom
     total_energy: (1, )
+        eV
     forces: (num_nodes, 3)
+        eV/AA
     stresses: (6, )
+        eV/AA^3 in Voigt order
     """
 
     def __init__(

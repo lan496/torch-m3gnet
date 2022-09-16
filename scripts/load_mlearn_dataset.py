@@ -29,8 +29,8 @@ def load_dataset(
     for data in raw_dataset:
         structure = Structure.from_dict(data["structure"])
         structures.append(structure)
-        # eV/atom
-        all_energies.append(np.array(data["outputs"]["energy"]) / data["num_atoms"])
+        # eV (total energy)
+        all_energies.append(np.array(data["outputs"]["energy"]))
         # eV/AA, (num_sites, 3)
         all_forces.append(np.array(data["outputs"]["forces"]))
         # eV/atom, Voigt order

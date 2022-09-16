@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import os
+from dataclasses import asdict
 
-import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
@@ -25,17 +25,13 @@ class LitM3GNet(pl.LightningModule):
     def __init__(
         self,
         model: torch.nn.Module,
-        learning_rate: float,
-        decay_steps: int,
-        force_weight: float,
-        stress_weight: float,
+        config: RunConfig,
     ):
         super().__init__()
+        self.save_hyperparameters(asdict(config))
+
         self.model = model
-        self.learning_rate = learning_rate
-        self.decay_steps = decay_steps
-        self.force_weight = force_weight
-        self.stress_weight = stress_weight
+        self.config = config
 
         self.mae = torchmetrics.MeanAbsoluteError()
 
@@ -99,7 +95,7 @@ class LitM3GNet(pl.LightningModule):
 
         energy_loss = F.mse_loss(predicted_energy, target_energy, reduction="mean")  # eV/atom
         forces_loss = F.mse_loss(predicted_forces, target_forces, reduction="mean")  # eV/AA
-        loss = energy_loss + self.force_weight * forces_loss
+        loss = energy_loss + self.config.force_weight * forces_loss
 
         metrics = {
             "loss": loss,
@@ -113,8 +109,11 @@ class LitM3GNet(pl.LightningModule):
         return metrics
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.decay_steps)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.config.learning_rate)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=self.config.decay_steps,
+        )
         return [optimizer,], [
             scheduler,
         ]
@@ -160,9 +159,7 @@ def train_model(
         num_workers=num_workers,
     )
 
-    scaled_elemental_energies, mean, std = fit_elemental_energies(
-        train.dataset, config.num_types, device
-    )
+    elemental_energies = fit_elemental_energies(train.dataset, config.num_types, device)
 
     # Model
     model = build_energy_model(
@@ -172,21 +169,16 @@ def train_model(
         num_types=config.num_types,
         embedding_dim=config.embedding_dim,
         num_blocks=config.num_blocks,
-        scaled_elemental_energies=scaled_elemental_energies,
-        mean=mean,
-        std=std,
+        elemental_energies=elemental_energies,
         device=device,
     )
     litmodel = LitM3GNet(
         model=model,
-        learning_rate=config.learning_rate,
-        decay_steps=config.decay_steps,
-        force_weight=config.force_weight,
-        stress_weight=config.stress_weight,
+        config=config,
     )
 
     # Logging
-    log_save_dir = f"{config.root}/logs"
+    log_save_dir = f"{config.root}"
     tb_logger = pl_loggers.TensorBoardLogger(save_dir=log_save_dir)
     csv_logger = pl_loggers.CSVLogger(save_dir=log_save_dir)
 
@@ -215,15 +207,19 @@ def train_model(
     )
 
 
-def fit_elemental_energies(dataset: MaterialGraphDataset, num_types: int, device: torch.device):
+def fit_elemental_energies(
+    dataset: MaterialGraphDataset,
+    num_types: int,
+    device: torch.device,
+):
     X_all = []
     for graph in dataset:
         one_hot = torch.nn.functional.one_hot(graph[MaterialGraphKey.ATOM_TYPES], num_types)
         X_all.append(torch.sum(one_hot, dim=0).to(torch.float32))
     X_all = torch.stack(X_all).detach().numpy()  # (num_structures, num_types)
     y_all = dataset.data[MaterialGraphKey.TOTAL_ENERGY].numpy()  # (num_structures, )
-    mean = np.mean(y_all)
-    std = np.std(y_all)
-    reg = LinearRegression(fit_intercept=False).fit(X_all, (y_all - mean) / std)
-    scaled_elemental_energies = torch.tensor(reg.coef_, device=device)
-    return scaled_elemental_energies, mean, std
+    reg = LinearRegression(fit_intercept=False).fit(X_all, y_all)
+    # y_pred = reg.predict(X_all)
+    # scale = np.std(y_pred - y_all)
+    elemental_energies = torch.tensor(reg.coef_, device=device)  # eV/atom
+    return elemental_energies
