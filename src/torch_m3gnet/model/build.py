@@ -12,7 +12,7 @@ from torch_m3gnet.nn.invariant import DistanceAndAngle
 from torch_m3gnet.nn.readout import AtomWiseReadout
 
 
-def build_energy_model(
+def build_model(
     cutoff: float,
     l_max: int,
     n_max: int,

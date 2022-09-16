@@ -11,7 +11,10 @@ REQUIRED = [
     "typing_extensions",
     "torchtyping==0.1.4",
     "torch",
-    "pytorch-lightning>=1.7.5",
+    # Trouble in enabling grad in evaluation since 1.7.0
+    # Now now, use 1.6.x until the following issue is closed.
+    # https://github.com/Lightning-AI/lightning/issues/13948
+    "pytorch-lightning<1.7",
     "torch-scatter",
     "torch-sparse",
     "torch-geometric",
@@ -25,7 +28,7 @@ REQUIRED = [
 EXTRAS = {
     "dev": [
         "pytest",
-        # "pytest-cov==3.0.0",
+        "pytest-cov==3.0.0",
         "typeguard==2.13.3",
         "pre-commit",
         "black",
