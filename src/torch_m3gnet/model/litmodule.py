@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import asdict
 
+import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
@@ -159,7 +160,9 @@ def train_model(
         num_workers=num_workers,
     )
 
-    elemental_energies = fit_elemental_energies(train.dataset, config.num_types, device)
+    scaled_elemental_energies, scale = fit_elemental_energies(
+        train.dataset, config.num_types, device
+    )
 
     # Model
     model = build_energy_model(
@@ -169,7 +172,8 @@ def train_model(
         num_types=config.num_types,
         embedding_dim=config.embedding_dim,
         num_blocks=config.num_blocks,
-        elemental_energies=elemental_energies,
+        scaled_elemental_energies=scaled_elemental_energies,
+        scale=scale,
         device=device,
     )
     litmodel = LitM3GNet(
@@ -193,6 +197,7 @@ def train_model(
         logger=[tb_logger, csv_logger],
         accelerator=accelerator,
         devices=1,
+        profiler="simple",
     )
     trainer.fit(
         model=litmodel,
@@ -219,7 +224,10 @@ def fit_elemental_energies(
     X_all = torch.stack(X_all).detach().numpy()  # (num_structures, num_types)
     y_all = dataset.data[MaterialGraphKey.TOTAL_ENERGY].numpy()  # (num_structures, )
     reg = LinearRegression(fit_intercept=False).fit(X_all, y_all)
-    # y_pred = reg.predict(X_all)
-    # scale = np.std(y_pred - y_all)
     elemental_energies = torch.tensor(reg.coef_, device=device)  # eV/atom
-    return elemental_energies
+
+    num_atoms = np.sum(X_all, axis=1)
+    y_pred = reg.predict(X_all)
+    scale = np.sqrt(np.mean(((y_pred - y_all) / num_atoms) ** 2))  # eV/atom
+    scaled_elemental_energies = elemental_energies / scale
+    return scaled_elemental_energies, scale

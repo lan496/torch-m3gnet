@@ -14,11 +14,13 @@ class AtomWiseReadout(torch.nn.Module):
         self,
         in_features: int,
         num_layers: int,
+        scale: float,
         device: torch.device | None = None,
     ):
         super().__init__()
         self.in_features = in_features
         self.num_layers = num_layers
+        self.scale = scale  # eV/atom
 
         dimensions = [self.in_features] * (self.num_layers - 1) + [1]
         self.gated = GatedMLP(
@@ -43,8 +45,6 @@ class AtomWiseReadout(torch.nn.Module):
         )
 
         # Rescale energy
-        # graph[MaterialGraphKey.TOTAL_ENERGY] = (
-        #     self.std * graph[MaterialGraphKey.TOTAL_ENERGY] + self.mean
-        # )
+        graph[MaterialGraphKey.TOTAL_ENERGY] = self.scale * graph[MaterialGraphKey.TOTAL_ENERGY]
 
         return graph
