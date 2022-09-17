@@ -173,7 +173,7 @@ def train_model(
         num_workers=num_workers,
     )
 
-    scaled_elemental_energies, scale = fit_elemental_energies(
+    elemental_energies, mean, scale = fit_elemental_energies(
         train.dataset, config.num_types, device
     )
 
@@ -185,7 +185,8 @@ def train_model(
         num_types=config.num_types,
         embedding_dim=config.embedding_dim,
         num_blocks=config.num_blocks,
-        scaled_elemental_energies=scaled_elemental_energies,
+        elemental_energies=elemental_energies,
+        mean=mean,
         scale=scale,
         device=device,
     )
@@ -275,12 +276,12 @@ def fit_elemental_energies(
         one_hot = torch.nn.functional.one_hot(graph[MaterialGraphKey.ATOM_TYPES], num_types)
         X_all.append(torch.sum(one_hot, dim=0).to(torch.float32))
     X_all = torch.stack(X_all).detach().numpy()  # (num_structures, num_types)
-    y_all = dataset.data[MaterialGraphKey.TOTAL_ENERGY].numpy()  # (num_structures, )
-    reg = LinearRegression(fit_intercept=False).fit(X_all, y_all)
+    num_atoms = np.sum(X_all, axis=1)
+    y_all = dataset.data[MaterialGraphKey.TOTAL_ENERGY].numpy() / num_atoms  # (num_structures, )
+    reg = LinearRegression(fit_intercept=True).fit(X_all, y_all)
+    mean = reg.intercept_  # eV/atom
     elemental_energies = torch.tensor(reg.coef_, device=device)  # eV/atom
 
-    num_atoms = np.sum(X_all, axis=1)
-    y_pred = reg.predict(X_all)
-    scale = np.sqrt(np.mean(((y_pred - y_all) / num_atoms) ** 2))  # eV/atom
-    scaled_elemental_energies = elemental_energies / scale
-    return scaled_elemental_energies, scale
+    y_pred = reg.predict(X_all)  # eV/atom
+    scale = np.mean((y_pred - y_all) ** 2)  # eV/atom
+    return elemental_energies, mean, scale
