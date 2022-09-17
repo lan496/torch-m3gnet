@@ -38,7 +38,7 @@ def load_dataset(
         # 1eV/AA^3 = 1602.1766208 kbar
         # Voigt order: xx, yy, zz, yz, zx, xy
         # VASP order: xx, yy, zz, xy, yz, zx
-        vs = np.array(data["outputs"]["virial_stress"]) / structure.num_sites
+        vs = np.array(data["outputs"]["virial_stress"]) / 1602.1766208  # eV/AA^3
         all_stresses.append(vs[[0, 1, 2, 5, 3, 4]])
 
     dataset = MaterialGraphDataset(
@@ -84,6 +84,7 @@ def load_test_dataset(
 @click.option("--resume_ckpt_path", default=None, type=str)
 @click.option("--device", default="cpu", help="cuda or cpu")
 @click.option("--num_workers", default=-1, type=int)
+@click.option("--debug", is_flag=True)
 def main(
     raw_datadir: str,
     element: str,
@@ -91,6 +92,7 @@ def main(
     resume_ckpt_path: str | None,
     device: str,
     num_workers: int,
+    debug: bool,
 ):
     # TODO: use hydra
     with open(config_path, "r") as f:
@@ -125,6 +127,7 @@ def main(
         resume_ckpt_path=resume_ckpt_path,
         device=device,
         num_workers=num_workers,
+        debug=debug,
     )
 
 

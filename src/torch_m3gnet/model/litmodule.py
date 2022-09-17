@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import torchmetrics
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning import seed_everything
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelSummary
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from sklearn.linear_model import LinearRegression
 from torch.utils.data import random_split
@@ -87,25 +88,37 @@ class LitM3GNet(pl.LightningModule):
         )
         target_energy = graph[MaterialGraphKey.TOTAL_ENERGY].clone() / num_nodes_per_graph
         target_forces = graph[MaterialGraphKey.FORCES].clone()
+        target_stresses = graph[MaterialGraphKey.STRESSES].clone()
 
         # Forward
         graph = self.model(graph)
 
         predicted_energy = graph[MaterialGraphKey.TOTAL_ENERGY] / num_nodes_per_graph
         predicted_forces = graph[MaterialGraphKey.FORCES]
+        predicted_stresses = graph[MaterialGraphKey.STRESSES]
 
         energy_loss = F.mse_loss(predicted_energy, target_energy, reduction="mean")  # eV/atom
         forces_loss = F.mse_loss(predicted_forces, target_forces, reduction="mean")  # eV/AA
-        loss = energy_loss + self.config.force_weight * forces_loss
+        stresses_loss = F.mse_loss(
+            predicted_stresses, target_stresses, reduction="mean"
+        )  # eV/AA^3
+        loss = (
+            energy_loss
+            + self.config.force_weight * forces_loss
+            + self.config.stress_weight * stresses_loss
+        )
 
         metrics = {
             "loss": loss,
             "energy_loss": energy_loss,
             "forces_loss": forces_loss,
+            "stresses_loss": stresses_loss,
             "energy_rmse": torch.sqrt(energy_loss),
             "forces_rmse": torch.sqrt(forces_loss),
+            "stresses_rmse": torch.sqrt(stresses_loss),
             "energy_mae": self.mae(predicted_energy, target_energy),
             "forces_mae": self.mae(predicted_forces, target_forces),
+            "stresses_mae": self.mae(predicted_stresses, target_stresses),
         }
         return metrics
 
@@ -114,6 +127,7 @@ class LitM3GNet(pl.LightningModule):
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer,
             T_max=self.config.decay_steps,
+            eta_min=self.config.learning_rate * self.config.decay_alpha,
         )
         return [optimizer,], [
             scheduler,
@@ -132,6 +146,7 @@ def train_model(
     resume_ckpt_path: str | None = None,
     device: str | None = None,
     num_workers: int = -1,
+    debug: bool = False,
 ):
     accelerator = get_accelerator(device)
 
@@ -158,7 +173,7 @@ def train_model(
         num_workers=num_workers,
     )
 
-    scaled_elemental_energies, scale = fit_elemental_energies(
+    elemental_energies, mean, scale = fit_elemental_energies(
         train.dataset, config.num_types, device
     )
 
@@ -170,7 +185,8 @@ def train_model(
         num_types=config.num_types,
         embedding_dim=config.embedding_dim,
         num_blocks=config.num_blocks,
-        scaled_elemental_energies=scaled_elemental_energies,
+        elemental_energies=elemental_energies,
+        mean=mean,
         scale=scale,
         device=device,
     )
@@ -180,11 +196,36 @@ def train_model(
     )
 
     # Logging
-    log_save_dir = f"{config.root}"
-    tb_logger = pl_loggers.TensorBoardLogger(save_dir=log_save_dir)
-    csv_logger = pl_loggers.CSVLogger(save_dir=log_save_dir)
+    if debug:
+        log_save_dir = f"{config.root}/debug"
+    else:
+        log_save_dir = f"{config.root}"
+    logger = [
+        pl_loggers.TensorBoardLogger(save_dir=log_save_dir),
+        pl_loggers.CSVLogger(save_dir=log_save_dir),
+    ]
 
     # Trainer
+    if debug:
+        trainer = pl.Trainer(
+            default_root_dir=f"{config.root}/debug",
+            callbacks=[
+                LearningRateMonitor(logging_interval="epoch"),
+                ModelSummary(max_depth=1),
+            ],
+            max_epochs=config.max_epochs,
+            accumulate_grad_batches=config.accumulate_grad_batches,
+            logger=logger,
+            accelerator=accelerator,
+            devices=1,
+            overfit_batches=1,
+        )
+        trainer.fit(
+            model=litmodel,
+            datamodule=datamodule,
+        )
+        return
+
     trainer = pl.Trainer(
         default_root_dir=config.root,
         callbacks=[
@@ -192,7 +233,7 @@ def train_model(
         ],
         max_epochs=config.max_epochs,
         accumulate_grad_batches=config.accumulate_grad_batches,
-        logger=[tb_logger, csv_logger],
+        logger=logger,
         accelerator=accelerator,
         devices=1,
         profiler="simple",
@@ -235,12 +276,12 @@ def fit_elemental_energies(
         one_hot = torch.nn.functional.one_hot(graph[MaterialGraphKey.ATOM_TYPES], num_types)
         X_all.append(torch.sum(one_hot, dim=0).to(torch.float32))
     X_all = torch.stack(X_all).detach().numpy()  # (num_structures, num_types)
-    y_all = dataset.data[MaterialGraphKey.TOTAL_ENERGY].numpy()  # (num_structures, )
-    reg = LinearRegression(fit_intercept=False).fit(X_all, y_all)
+    num_atoms = np.sum(X_all, axis=1)
+    y_all = dataset.data[MaterialGraphKey.TOTAL_ENERGY].numpy() / num_atoms  # (num_structures, )
+    reg = LinearRegression(fit_intercept=True).fit(X_all, y_all)
+    mean = reg.intercept_  # eV/atom
     elemental_energies = torch.tensor(reg.coef_, device=device)  # eV/atom
 
-    num_atoms = np.sum(X_all, axis=1)
-    y_pred = reg.predict(X_all)
-    scale = np.sqrt(np.mean(((y_pred - y_all) / num_atoms) ** 2))  # eV/atom
-    scaled_elemental_energies = elemental_energies / scale
-    return scaled_elemental_energies, scale
+    y_pred = reg.predict(X_all)  # eV/atom
+    scale = np.mean((y_pred - y_all) ** 2)  # eV/atom
+    return elemental_energies, mean, scale

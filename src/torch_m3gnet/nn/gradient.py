@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import torch
+from torch_scatter import scatter_sum
+from torchtyping import TensorType  # type: ignore
 
 from torch_m3gnet.data import MaterialGraphKey
 from torch_m3gnet.data.material_graph import BatchMaterialGraph
@@ -15,6 +17,7 @@ class Gradient(torch.nn.Module):
         self.model = model
 
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
+        # TODO: current implementation cannot be used with spatial decomposition
         graph[MaterialGraphKey.POS].requires_grad_(True)
 
         graph = self.model(graph)
@@ -25,6 +28,30 @@ class Gradient(torch.nn.Module):
             retain_graph=True,
         )
         graph[MaterialGraphKey.FORCES] = -grads[0]
+
+        num_structures = graph[MaterialGraphKey.TOTAL_ENERGY].size(0)
+        stresses: TensorType["num_structures", 3, 3] = scatter_sum(  # type: ignore # noqa: F821
+            graph[MaterialGraphKey.POS][:, :, None] * graph[MaterialGraphKey.FORCES][:, None, :],
+            index=graph[MaterialGraphKey.BATCH],
+            dim=0,
+            dim_size=num_structures,
+        )
+        cells = graph[MaterialGraphKey.LATTICE]
+        # Volume by scalar triple product, a.(bxc)
+        volumes = torch.abs(torch.sum(cells[:, 0] * torch.cross(cells[:, 1], cells[:, 2]), dim=1))
+        graph[MaterialGraphKey.STRESSES] = torch.vstack(
+            [
+                stresses[:, 0, 0],
+                stresses[:, 1, 1],
+                stresses[:, 2, 2],
+                stresses[:, 1, 2],
+                stresses[:, 2, 0],
+                stresses[:, 0, 1],
+            ]
+        )
+        graph[MaterialGraphKey.STRESSES] = torch.transpose(
+            graph[MaterialGraphKey.STRESSES] / volumes, 0, 1
+        )
 
         graph[MaterialGraphKey.POS].requires_grad_(False)
         return graph
