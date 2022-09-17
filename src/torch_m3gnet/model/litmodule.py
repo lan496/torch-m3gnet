@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import torchmetrics
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning import seed_everything
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelSummary
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from sklearn.linear_model import LinearRegression
 from torch.utils.data import random_split
@@ -126,7 +127,7 @@ class LitM3GNet(pl.LightningModule):
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer,
             T_max=self.config.decay_steps,
-            eta_min=self.config.learning_rate * 0.01,  # TODO
+            eta_min=self.config.learning_rate * self.config.decay_alpha,
         )
         return [optimizer,], [
             scheduler,
@@ -194,17 +195,26 @@ def train_model(
     )
 
     # Logging
-    log_save_dir = f"{config.root}"
-    tb_logger = pl_loggers.TensorBoardLogger(save_dir=log_save_dir)
-    csv_logger = pl_loggers.CSVLogger(save_dir=log_save_dir)
+    if debug:
+        log_save_dir = f"{config.root}/debug"
+    else:
+        log_save_dir = f"{config.root}"
+    logger = [
+        pl_loggers.TensorBoardLogger(save_dir=log_save_dir),
+        pl_loggers.CSVLogger(save_dir=log_save_dir),
+    ]
 
     # Trainer
     if debug:
         trainer = pl.Trainer(
             default_root_dir=f"{config.root}/debug",
+            callbacks=[
+                LearningRateMonitor(logging_interval="epoch"),
+                ModelSummary(max_depth=1),
+            ],
             max_epochs=config.max_epochs,
             accumulate_grad_batches=config.accumulate_grad_batches,
-            logger=[pl_loggers.TensorBoardLogger(save_dir=f"{config.root}/debug")],
+            logger=logger,
             accelerator=accelerator,
             devices=1,
             overfit_batches=1,
@@ -222,7 +232,7 @@ def train_model(
         ],
         max_epochs=config.max_epochs,
         accumulate_grad_batches=config.accumulate_grad_batches,
-        logger=[tb_logger, csv_logger],
+        logger=logger,
         accelerator=accelerator,
         devices=1,
         profiler="simple",
