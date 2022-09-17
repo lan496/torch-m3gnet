@@ -128,10 +128,45 @@ Derivative of Legendre polynomial
 ## Readout
 
 ```{math}
-  E = \sum_{i} \phi_{3}(\mathbf{v}_{i})
+  \tilde{E}_{\mathrm{M3GNet}} = \sum_{i} \phi_{3}(\mathbf{v}_{i})
 ```
 
 ## Elemental reference energy
+
+We first fit total energies in a training dataset from atom types {math}`\{ t_{i} \}`.
+Then, we normalize the residual on the training dataset as
+```{math}
+  E(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}) - \sum_{i=1}^{N} E_{t_{i}}
+  = N \mu
+    + \sigma \tilde{E}_{\mathrm{M3GNet}}(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}),
+```
+where {math}`\mu = O(1), \sigma = O(1)` and {math}`\tilde{E}_{\mathrm{M3GNet}}(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}) = O(N)`.
+
+## Loss function
+
+```{math}
+l_{E} &=
+\frac{1}{n_{\mathrm{train}}}
+\sum_{n=1}^{n_{\mathrm{train}}}
+  \left|
+    \frac{1}{N^{(n)}} \left(
+      E(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - E^{(n)}
+    \right)
+  \right|^{2} \\
+l_{F} &=
+\frac{1}{3 n_{\mathrm{train}}}
+\sum_{n=1}^{n_{\mathrm{train}}} \sum_{\alpha=1}^{3}
+  \left|
+    F_{\alpha}(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - F_{\alpha}^{(n)}
+  \right|^{2} \\
+l_{S} &=
+\frac{1}{6 n_{\mathrm{train}}}
+\sum_{n=1}^{n_{\mathrm{train}}} \sum_{p=1}^{6}
+  \left|
+    \sigma_{p}(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - \sigma_{p}^{(n)}
+  \right|^{2} \\
+l &= l_{E} + w_{F} l_{F} + w_{S} l_{S} \\
+```
 
 ## References
 ```{bibliography}

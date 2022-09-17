@@ -62,15 +62,15 @@ We define a virial stress tensor as
 \newcommand{\pdev}[2]{\frac{\partial #1}{\partial #2}}
 
 \sigma_{\alpha\beta}
-    &:= \lim_{ \epsilon \to \mathbf{O} } -\pdev{ \tilde{E}(\epsilon) }{ \epsilon_{\alpha\beta} } \\
-    &= \lim_{ \epsilon \to \mathbf{O} } -\sum_{i\gamma} \pdev{E}{r_{i\gamma}}( \{ \mathbf{A}(\epsilon)\mathbf{s}_{j}^{0} \} ) \pdev{}{\epsilon_{\alpha\beta}} \sum_{p} A_{\gamma p}(\epsilon) s_{ip}^{0} \\
-    &= \lim_{ \epsilon \to \mathbf{O} } -\sum_{i p} \pdev{E}{r_{i\beta}}( \{ \mathbf{A}(\epsilon)\mathbf{s}_{j}^{0} \} ) A_{\alpha p} s_{ip}^{0} \\
-    &= \sum_{i} r_{i\alpha} F_{i\beta} .
+    &:= \lim_{ \epsilon \to \mathbf{O} } -\frac{1}{V} \pdev{ \tilde{E}(\epsilon) }{ \epsilon_{\alpha\beta} } \\
+    &= \lim_{ \epsilon \to \mathbf{O} } - \frac{1}{V} \sum_{i\gamma} \pdev{E}{r_{i\gamma}}( \{ \mathbf{A}(\epsilon)\mathbf{s}_{j}^{0} \} ) \pdev{}{\epsilon_{\alpha\beta}} \sum_{p} A_{\gamma p}(\epsilon) s_{ip}^{0} \\
+    &= \lim_{ \epsilon \to \mathbf{O} } - \frac{1}{V} \sum_{i p} \pdev{E}{r_{i\beta}}( \{ \mathbf{A}(\epsilon)\mathbf{s}_{j}^{0} \} ) A_{\alpha p} s_{ip}^{0} \\
+    &= \frac{1}{V} \sum_{i} r_{i\alpha} F_{i\beta} .
 ```
 
 Rewrite the virial stress tensor with the pair forces:
 ```{math}
-\mathbf{\sigma}
+\mathbf{\sigma}V
     &= \sum_{i} \mathbf{r}_{i} \otimes \mathbf{F}_{i} \\
     &= \sum_{i} \sum_{j \in \mathcal{N}_{i}}
         \mathbf{r}_{i} \otimes \left( \mathbf{F}_{ij} - \mathbf{F}_{ji} \right) \\

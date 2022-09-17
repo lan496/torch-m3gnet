@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Network architecture &#8212; torch-m3gnet 0.1.dev37+g598e186</title>
+    <title>Network architecture &#8212; torch-m3gnet 0.1.dev41+g9031336</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -74,7 +74,7 @@
       
       
       
-      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev37+g598e186</h1>
+      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev41+g9031336</h1>
       
     </a>
 </div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
@@ -301,6 +301,11 @@ title="Print to PDF"
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#loss-function">
+   Loss function
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#references">
    References
   </a>
@@ -372,6 +377,11 @@ title="Print to PDF"
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#elemental-reference-energy">
    Elemental reference energy
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#loss-function">
+   Loss function
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
@@ -501,10 +511,42 @@ h_{m}(r)
 <section id="readout">
 <h2>Readout<a class="headerlink" href="#readout" title="Permalink to this headline">#</a></h2>
 <div class="math notranslate nohighlight">
-\[  E = \sum_{i} \phi_{3}(\mathbf{v}_{i})\]</div>
+\[  \tilde{E}_{\mathrm{M3GNet}} = \sum_{i} \phi_{3}(\mathbf{v}_{i})\]</div>
 </section>
 <section id="elemental-reference-energy">
 <h2>Elemental reference energy<a class="headerlink" href="#elemental-reference-energy" title="Permalink to this headline">#</a></h2>
+<p>We first fit total energies in a training dataset from atom types <span class="math notranslate nohighlight">\(\{ t_{i} \}\)</span>.
+Then, we normalize the residual on the training dataset as</p>
+<div class="math notranslate nohighlight">
+\[  E(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}) - \sum_{i=1}^{N} E_{t_{i}}
+  = N \mu
+    + \sigma \tilde{E}_{\mathrm{M3GNet}}(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}),\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mu = O(1), \sigma = O(1)\)</span> and <span class="math notranslate nohighlight">\(\tilde{E}_{\mathrm{M3GNet}}(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}) = O(N)\)</span>.</p>
+</section>
+<section id="loss-function">
+<h2>Loss function<a class="headerlink" href="#loss-function" title="Permalink to this headline">#</a></h2>
+<div class="math notranslate nohighlight">
+\[\begin{split}l_{E} &amp;=
+\frac{1}{n_{\mathrm{train}}}
+\sum_{n=1}^{n_{\mathrm{train}}}
+  \left|
+    \frac{1}{N^{(n)}} \left(
+      E(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - E^{(n)}
+    \right)
+  \right|^{2} \\
+l_{F} &amp;=
+\frac{1}{3 n_{\mathrm{train}}}
+\sum_{n=1}^{n_{\mathrm{train}}} \sum_{\alpha=1}^{3}
+  \left|
+    F_{\alpha}(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - F_{\alpha}^{(n)}
+  \right|^{2} \\
+l_{S} &amp;=
+\frac{1}{6 n_{\mathrm{train}}}
+\sum_{n=1}^{n_{\mathrm{train}}} \sum_{p=1}^{6}
+  \left|
+    \sigma_{p}(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - \sigma_{p}^{(n)}
+  \right|^{2} \\
+l &amp;= l_{E} + w_{F} l_{F} + w_{S} l_{S} \\\end{split}\]</div>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">#</a></h2>

@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Forces and virial stress via autograd &#8212; torch-m3gnet 0.1.dev37+g598e186</title>
+    <title>Forces and virial stress via autograd &#8212; torch-m3gnet 0.1.dev41+g9031336</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -74,7 +74,7 @@
       
       
       
-      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev37+g598e186</h1>
+      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev41+g9031336</h1>
       
     </a>
 </div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
@@ -352,13 +352,13 @@ Also we model a total energy as summation of atomic energies.</p>
 <p>We define a virial stress tensor as</p>
 <div class="math notranslate nohighlight">
 \[ \begin{align}\begin{aligned}\newcommand{\pdev}[2]{\frac{\partial #1}{\partial #2}}\\\begin{split}\sigma_{\alpha\beta}
-    &amp;:= \lim_{ \epsilon \to \mathbf{O} } -\pdev{ \tilde{E}(\epsilon) }{ \epsilon_{\alpha\beta} } \\
-    &amp;= \lim_{ \epsilon \to \mathbf{O} } -\sum_{i\gamma} \pdev{E}{r_{i\gamma}}( \{ \mathbf{A}(\epsilon)\mathbf{s}_{j}^{0} \} ) \pdev{}{\epsilon_{\alpha\beta}} \sum_{p} A_{\gamma p}(\epsilon) s_{ip}^{0} \\
-    &amp;= \lim_{ \epsilon \to \mathbf{O} } -\sum_{i p} \pdev{E}{r_{i\beta}}( \{ \mathbf{A}(\epsilon)\mathbf{s}_{j}^{0} \} ) A_{\alpha p} s_{ip}^{0} \\
-    &amp;= \sum_{i} r_{i\alpha} F_{i\beta} .\end{split}\end{aligned}\end{align} \]</div>
+    &amp;:= \lim_{ \epsilon \to \mathbf{O} } -\frac{1}{V} \pdev{ \tilde{E}(\epsilon) }{ \epsilon_{\alpha\beta} } \\
+    &amp;= \lim_{ \epsilon \to \mathbf{O} } - \frac{1}{V} \sum_{i\gamma} \pdev{E}{r_{i\gamma}}( \{ \mathbf{A}(\epsilon)\mathbf{s}_{j}^{0} \} ) \pdev{}{\epsilon_{\alpha\beta}} \sum_{p} A_{\gamma p}(\epsilon) s_{ip}^{0} \\
+    &amp;= \lim_{ \epsilon \to \mathbf{O} } - \frac{1}{V} \sum_{i p} \pdev{E}{r_{i\beta}}( \{ \mathbf{A}(\epsilon)\mathbf{s}_{j}^{0} \} ) A_{\alpha p} s_{ip}^{0} \\
+    &amp;= \frac{1}{V} \sum_{i} r_{i\alpha} F_{i\beta} .\end{split}\end{aligned}\end{align} \]</div>
 <p>Rewrite the virial stress tensor with the pair forces:</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}\mathbf{\sigma}
+\[\begin{split}\mathbf{\sigma}V
     &amp;= \sum_{i} \mathbf{r}_{i} \otimes \mathbf{F}_{i} \\
     &amp;= \sum_{i} \sum_{j \in \mathcal{N}_{i}}
         \mathbf{r}_{i} \otimes \left( \mathbf{F}_{ij} - \mathbf{F}_{ji} \right) \\
