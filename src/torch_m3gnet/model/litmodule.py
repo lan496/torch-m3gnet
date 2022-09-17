@@ -87,25 +87,37 @@ class LitM3GNet(pl.LightningModule):
         )
         target_energy = graph[MaterialGraphKey.TOTAL_ENERGY].clone() / num_nodes_per_graph
         target_forces = graph[MaterialGraphKey.FORCES].clone()
+        target_stresses = graph[MaterialGraphKey.STRESSES].clone()
 
         # Forward
         graph = self.model(graph)
 
         predicted_energy = graph[MaterialGraphKey.TOTAL_ENERGY] / num_nodes_per_graph
         predicted_forces = graph[MaterialGraphKey.FORCES]
+        predicted_stresses = graph[MaterialGraphKey.STRESSES]
 
         energy_loss = F.mse_loss(predicted_energy, target_energy, reduction="mean")  # eV/atom
         forces_loss = F.mse_loss(predicted_forces, target_forces, reduction="mean")  # eV/AA
-        loss = energy_loss + self.config.force_weight * forces_loss
+        stresses_loss = F.mse_loss(
+            predicted_stresses, target_stresses, reduction="mean"
+        )  # eV/AA^3
+        loss = (
+            energy_loss
+            + self.config.force_weight * forces_loss
+            + self.config.stress_weight * stresses_loss
+        )
 
         metrics = {
             "loss": loss,
             "energy_loss": energy_loss,
             "forces_loss": forces_loss,
+            "stresses_loss": stresses_loss,
             "energy_rmse": torch.sqrt(energy_loss),
             "forces_rmse": torch.sqrt(forces_loss),
+            "stresses_rmse": torch.sqrt(stresses_loss),
             "energy_mae": self.mae(predicted_energy, target_energy),
             "forces_mae": self.mae(predicted_forces, target_forces),
+            "stresses_mae": self.mae(predicted_stresses, target_stresses),
         }
         return metrics
 
@@ -114,6 +126,7 @@ class LitM3GNet(pl.LightningModule):
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer,
             T_max=self.config.decay_steps,
+            eta_min=self.config.learning_rate * 0.01,  # TODO
         )
         return [optimizer,], [
             scheduler,
@@ -132,6 +145,7 @@ def train_model(
     resume_ckpt_path: str | None = None,
     device: str | None = None,
     num_workers: int = -1,
+    debug: bool = False,
 ):
     accelerator = get_accelerator(device)
 
@@ -185,6 +199,22 @@ def train_model(
     csv_logger = pl_loggers.CSVLogger(save_dir=log_save_dir)
 
     # Trainer
+    if debug:
+        trainer = pl.Trainer(
+            default_root_dir=f"{config.root}/debug",
+            max_epochs=config.max_epochs,
+            accumulate_grad_batches=config.accumulate_grad_batches,
+            logger=[pl_loggers.TensorBoardLogger(save_dir=f"{config.root}/debug")],
+            accelerator=accelerator,
+            devices=1,
+            overfit_batches=1,
+        )
+        trainer.fit(
+            model=litmodel,
+            datamodule=datamodule,
+        )
+        return
+
     trainer = pl.Trainer(
         default_root_dir=config.root,
         callbacks=[
