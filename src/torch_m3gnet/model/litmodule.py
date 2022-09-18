@@ -15,6 +15,8 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from sklearn.linear_model import LinearRegression
 from torch.utils.data import random_split
 from torch_geometric.data import LightningDataset
+from torch_scatter import scatter_sum
+from torchtyping import TensorType  # type: ignore
 
 from torch_m3gnet.config import RunConfig
 from torch_m3gnet.data import MaterialGraphKey
@@ -82,7 +84,7 @@ class LitM3GNet(pl.LightningModule):
         )
 
     def _loss_fn(self, graph: BatchMaterialGraph, batch_size: int):
-        num_nodes_per_graph = torch.bincount(
+        num_nodes_per_graph: TensorType["batch_size"] = torch.bincount(  # type: ignore # noqa: F821
             graph[MaterialGraphKey.BATCH],
             minlength=batch_size,
         )
@@ -98,7 +100,12 @@ class LitM3GNet(pl.LightningModule):
         predicted_stresses = graph[MaterialGraphKey.STRESSES]
 
         energy_loss = F.mse_loss(predicted_energy, target_energy, reduction="mean")  # eV/atom
-        forces_loss = F.mse_loss(predicted_forces, target_forces, reduction="mean")  # eV/AA
+        forces_diff: TensorType["batch_size"] = scatter_sum(  # type: ignore # noqa: F821
+            torch.sum(torch.square(predicted_forces - target_forces), dim=1),
+            index=graph[MaterialGraphKey.BATCH],
+            dim_size=batch_size,
+        )
+        forces_loss = torch.sum(forces_diff / num_nodes_per_graph) / (3 * batch_size)  # eV/AA
         stresses_loss = F.mse_loss(
             predicted_stresses, target_stresses, reduction="mean"
         )  # eV/AA^3
@@ -284,4 +291,5 @@ def fit_elemental_energies(
 
     y_pred = reg.predict(X_all)  # eV/atom
     scale = np.mean((y_pred - y_all) ** 2)  # eV/atom
+
     return elemental_energies, mean, scale

@@ -154,17 +154,19 @@ l_{E} &=
     \right)
   \right|^{2} \\
 l_{F} &=
-\frac{1}{3 n_{\mathrm{train}}}
-\sum_{n=1}^{n_{\mathrm{train}}} \sum_{\alpha=1}^{3}
-  \left|
-    F_{\alpha}(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - F_{\alpha}^{(n)}
-  \right|^{2} \\
-l_{S} &=
-\frac{1}{6 n_{\mathrm{train}}}
-\sum_{n=1}^{n_{\mathrm{train}}} \sum_{p=1}^{6}
-  \left|
-    \sigma_{p}(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - \sigma_{p}^{(n)}
-  \right|^{2} \\
+\frac{1}{n_{\mathrm{train}}}
+\sum_{n=1}^{n_{\mathrm{train}}}
+  \frac{1}{3N^{(n)}}
+  \sum_{j=1}^{N^{(n)}} \sum_{\alpha=1}^{3}
+    \left|
+      F_{j\alpha}(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - F_{j \alpha}^{(n)}
+    \right|^{2} \\
+  l_{S} &=
+  \frac{1}{6 n_{\mathrm{train}}}
+  \sum_{n=1}^{n_{\mathrm{train}}} \sum_{p=1}^{6}
+    \left|
+      \sigma_{p}(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - \sigma_{p}^{(n)}
+    \right|^{2} \\
 l &= l_{E} + w_{F} l_{F} + w_{S} l_{S} \\
 ```
 
