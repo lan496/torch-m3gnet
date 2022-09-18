@@ -15,7 +15,7 @@ def test_model(model, graph: BatchMaterialGraph):
     graph = model(graph)
     assert not torch.any(torch.isnan(graph[MaterialGraphKey.NODE_FEATURES]))
     assert not torch.any(torch.isnan(graph[MaterialGraphKey.EDGE_ATTR]))
-    assert not torch.any(torch.isnan(graph[MaterialGraphKey.ATOMIC_ENERGIES]))
+    assert not torch.any(torch.isnan(graph[MaterialGraphKey.SCALED_ATOMIC_ENERGIES]))
 
 
 def test_three_body_interaction(model, graph: BatchMaterialGraph):

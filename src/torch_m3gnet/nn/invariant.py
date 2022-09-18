@@ -15,8 +15,8 @@ class DistanceAndAngle(torch.nn.Module):
 
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         batch = graph[MaterialGraphKey.BATCH]
-        lattice = graph[MaterialGraphKey.LATTICE]
-        pos = graph[MaterialGraphKey.POS]
+        lattice = graph[MaterialGraphKey.SCALED_LATTICE]  # unitless
+        pos = graph[MaterialGraphKey.SCALED_POS]  # unitless
         edge_index = graph[MaterialGraphKey.EDGE_INDEX]
         edge_cell_shift = graph[MaterialGraphKey.EDGE_CELL_SHIFT]
         triplet_edge_index = graph[MaterialGraphKey.TRIPLET_EDGE_INDEX]

@@ -172,8 +172,6 @@ def model(config: RunConfig, device: torch.device) -> torch.nn.Sequential:
         num_types=config.num_types,
         embedding_dim=config.embedding_dim,
         num_blocks=config.num_blocks,
-        # scaled_elemental_energies=scaled_elemental_energies,
-        # scale=scale,
         device=device,
     )
     return model

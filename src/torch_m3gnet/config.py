@@ -24,6 +24,7 @@ class RunConfig:
     accumulate_grad_batches: int = 1
     val_ratio: float = 0.2
     early_stopping_patience: int = 200
+    energy_weight: float = 1.0
     force_weight: float = 1.0
     stress_weight: float = 0.1
     # Misc

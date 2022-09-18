@@ -12,6 +12,7 @@ from torch_m3gnet.data.material_graph import BatchMaterialGraph, MaterialGraph
 from torch_m3gnet.nn.featurizer import AtomFeaturizer, EdgeFeaturizer
 from torch_m3gnet.nn.interaction import legendre_cos, spherical_bessel
 from torch_m3gnet.nn.invariant import DistanceAndAngle
+from torch_m3gnet.nn.scale import ScaleLength
 from torch_m3gnet.utils import rotate_cell
 
 
@@ -19,7 +20,10 @@ def test_distance_angle(
     graph: BatchMaterialGraph,
     datum: list[MaterialGraph],
 ):
-    model = DistanceAndAngle()
+    model = torch.nn.Sequential(
+        ScaleLength(length_scale=1.0),
+        DistanceAndAngle(),
+    )
     graph = model(graph)
 
     subgraphs = [Batch.from_data_list([data]) for data in datum]
@@ -49,7 +53,10 @@ def test_invariance(lattice_coords_types, rotation):
     graph2 = Batch.from_data_list([MaterialGraph.from_structure(structure2, 5.0, 4.0)])
 
     # Distances and angles should be invariant as set w.r.t. rotations
-    model = DistanceAndAngle()
+    model = torch.nn.Sequential(
+        ScaleLength(length_scale=1.0),
+        DistanceAndAngle(),
+    )
     graph = model(graph)
     graph2 = model(graph2)
 
@@ -66,6 +73,7 @@ def test_invariance(lattice_coords_types, rotation):
 def test_edge_featurizer(graph: BatchMaterialGraph, device: torch.device):
     degree = 3
     model = torch.nn.Sequential(
+        ScaleLength(length_scale=1.0),
         DistanceAndAngle(),
         EdgeFeaturizer(degree=degree, cutoff=5.0, device=device),
     )

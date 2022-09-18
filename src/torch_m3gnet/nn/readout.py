@@ -39,13 +39,16 @@ class AtomWiseReadout(torch.nn.Module):
         # Elemental energies from AtomRef
         elemental_energies: TensorType["num_nodes"] = graph[MaterialGraphKey.ELEMENTAL_ENERGIES]  # type: ignore # noqa: F821
 
-        graph[MaterialGraphKey.ATOMIC_ENERGIES] = (
-            self.mean + self.scale * atomic_energy + elemental_energies
-        )
-        graph[MaterialGraphKey.TOTAL_ENERGY] = scatter_sum(
-            graph[MaterialGraphKey.ATOMIC_ENERGIES],
+        graph[MaterialGraphKey.SCALED_ATOMIC_ENERGIES] = (
+            self.mean + elemental_energies
+        ) / self.scale + atomic_energy  # unitless
+        graph[MaterialGraphKey.SCALED_TOTAL_ENERGY] = scatter_sum(
+            graph[MaterialGraphKey.SCALED_ATOMIC_ENERGIES],
             index=graph[MaterialGraphKey.BATCH],
             dim_size=graph[MaterialGraphKey.LATTICE].size(0),
+        )
+        graph[MaterialGraphKey.TOTAL_ENERGY] = (
+            self.scale * graph[MaterialGraphKey.SCALED_TOTAL_ENERGY]
         )
 
         return graph

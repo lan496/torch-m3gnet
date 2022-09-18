@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import torchmetrics
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning import seed_everything
-from pytorch_lightning.callbacks import LearningRateMonitor, ModelSummary
+from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from sklearn.linear_model import LinearRegression
 from torch.utils.data import random_split
@@ -110,7 +110,7 @@ class LitM3GNet(pl.LightningModule):
             predicted_stresses, target_stresses, reduction="mean"
         )  # eV/AA^3
         loss = (
-            energy_loss
+            self.config.energy_weight * energy_loss
             + self.config.force_weight * forces_loss
             + self.config.stress_weight * stresses_loss
         )
@@ -130,7 +130,11 @@ class LitM3GNet(pl.LightningModule):
         return metrics
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.config.learning_rate)
+        optimizer = torch.optim.Adam(
+            self.parameters(),
+            lr=self.config.learning_rate,
+            eps=1e-7,
+        )
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer,
             T_max=self.config.decay_steps,
@@ -180,7 +184,7 @@ def train_model(
         num_workers=num_workers,
     )
 
-    elemental_energies, mean, scale = fit_elemental_energies(
+    elemental_energies, energy_mean, energy_scale, length_scale = fit_elemental_energies(
         train.dataset, config.num_types, device
     )
 
@@ -193,8 +197,9 @@ def train_model(
         embedding_dim=config.embedding_dim,
         num_blocks=config.num_blocks,
         elemental_energies=elemental_energies,
-        mean=mean,
-        scale=scale,
+        energy_mean=energy_mean,
+        energy_scale=energy_scale,
+        length_scale=length_scale,
         device=device,
     )
     litmodel = LitM3GNet(
@@ -218,7 +223,6 @@ def train_model(
             default_root_dir=f"{config.root}/debug",
             callbacks=[
                 LearningRateMonitor(logging_interval="epoch"),
-                ModelSummary(max_depth=1),
             ],
             max_epochs=config.max_epochs,
             accumulate_grad_batches=config.accumulate_grad_batches,
@@ -290,6 +294,9 @@ def fit_elemental_energies(
     elemental_energies = torch.tensor(reg.coef_, device=device)  # eV/atom
 
     y_pred = reg.predict(X_all)  # eV/atom
-    scale = np.mean((y_pred - y_all) ** 2)  # eV/atom
+    energy_scale = np.mean((y_pred - y_all) ** 2)  # eV/atom
 
-    return elemental_energies, mean, scale
+    forces = dataset.data[MaterialGraphKey.FORCES]
+    length_scale = energy_scale / torch.sqrt(torch.mean(torch.square(forces))).item()  # AA
+
+    return elemental_energies, mean, energy_scale, length_scale

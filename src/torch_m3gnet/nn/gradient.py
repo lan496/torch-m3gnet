@@ -12,9 +12,13 @@ class Gradient(torch.nn.Module):
     def __init__(
         self,
         model: torch.nn.Module,
+        energy_scale: float,
+        length_scale: float,
     ):
         super().__init__()
         self.model = model
+        # self.energy_scale = energy_scale
+        # self.length_scale = length_scale
 
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         # TODO: current implementation cannot be used with spatial decomposition
@@ -25,11 +29,13 @@ class Gradient(torch.nn.Module):
             torch.sum(graph[MaterialGraphKey.TOTAL_ENERGY]),
             graph[MaterialGraphKey.POS],
             create_graph=True,  # Need to set True for training
-            retain_graph=True,
         )
         graph[MaterialGraphKey.FORCES] = -grads[0]
 
-        num_structures = graph[MaterialGraphKey.TOTAL_ENERGY].size(0)
+        graph[MaterialGraphKey.POS].requires_grad_(False)
+
+        # Virial stress tensor
+        num_structures = graph[MaterialGraphKey.SCALED_TOTAL_ENERGY].size(0)
         stresses: TensorType["num_structures", 3, 3] = scatter_sum(  # type: ignore # noqa: F821
             graph[MaterialGraphKey.POS][:, :, None] * graph[MaterialGraphKey.FORCES][:, None, :],
             index=graph[MaterialGraphKey.BATCH],
@@ -53,5 +59,4 @@ class Gradient(torch.nn.Module):
             graph[MaterialGraphKey.STRESSES] / volumes, 0, 1
         )
 
-        graph[MaterialGraphKey.POS].requires_grad_(False)
         return graph
