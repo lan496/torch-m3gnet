@@ -8,7 +8,7 @@ from torch_geometric.data import Batch
 
 from torch_m3gnet.data import MaterialGraphKey
 from torch_m3gnet.data.material_graph import BatchMaterialGraph, MaterialGraph
-from torch_m3gnet.utils import rotate_cell
+from torch_m3gnet.utils import rotate_cell, strain_cell
 
 
 def test_model(model, graph: BatchMaterialGraph):
@@ -47,8 +47,7 @@ def test_rotation_invariance(model, lattice_coords_types, rotation, device):
     node_features = graph[MaterialGraphKey.NODE_FEATURES]
 
     assert np.allclose(np.dot(rotation, rotation.T), np.eye(3))
-    lattice2, cart_coords2 = rotate_cell(lattice, cart_coords, rotation)
-    structure2 = Structure(lattice2, species, cart_coords2, coords_are_cartesian=True)
+    structure2 = rotate_cell(structure, rotation)
     graph2 = Batch.from_data_list([MaterialGraph.from_structure(structure2, 5.0, 4.0).to(device)])
 
     graph2 = model(graph2)
@@ -115,18 +114,6 @@ def test_forces(model, graph):
                 atol=1e-3,
                 rtol=1e-2,
             )
-
-
-def strain_cell(structure: Structure, strain, delta) -> Structure:
-    lattice = structure.lattice.matrix
-    frac_coords = structure.frac_coords
-    species = structure.species
-
-    new_lattice = lattice @ (np.eye(3) + delta * strain)
-    new_cart_coords = frac_coords @ new_lattice
-    new_structure = Structure(new_lattice, species, new_cart_coords, coords_are_cartesian=True)
-
-    return new_structure
 
 
 @pytest.mark.skip(reason="Too high noise to compare with numerical difference")

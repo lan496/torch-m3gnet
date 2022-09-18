@@ -247,7 +247,7 @@ def train_model(
         logger=logger,
         accelerator=accelerator,
         devices=1,
-        profiler="simple",
+        # profiler="simple",
     )
     trainer.fit(
         model=litmodel,
