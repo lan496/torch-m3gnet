@@ -15,6 +15,12 @@ class M3GNetConv(torch.nn.Module):
     Forward function updates the following attributes:
         - MaterialGraphKey.EDGE_ATTR
         - MaterialGraphKey.NODE_FEATURES
+
+    Note
+    ----
+    m3gnet.layers._gn.GraphNetworkLayer
+    m3gnet.layers._bond.ConcatAtoms
+    m3gnet.layers._atom.GatedAtomUpdate
     """
 
     def __init__(

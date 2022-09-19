@@ -4,6 +4,12 @@ import torch
 
 
 class GatedMLP(torch.nn.Module):
+    """
+    Note
+    ----
+    m3gnet.layers._core.GatedMLP
+    """
+
     def __init__(
         self,
         in_features: int,

@@ -81,8 +81,6 @@ def build_model(
     # Attach forces
     model = Gradient(
         model,
-        energy_scale=energy_scale,
-        length_scale=length_scale,
     )
 
     return model

@@ -145,6 +145,7 @@ class ThreeBodyInteration(torch.nn.Module):
     ----
     m3gnet.layers._three_body.SphericalBesselWithHarmonics
     m3gnet.utils._math.combine_sbf_shf
+    m3gnet.layres._bond.ThreeDInteraction
     """
 
     def __init__(

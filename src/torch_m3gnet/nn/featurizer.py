@@ -13,6 +13,10 @@ class AtomFeaturizer(torch.nn.Module):
 
     Forward function supplies the following attributes:
         - MaterialGraphKey.NODE_FEATURES
+
+    Note
+    ----
+    m3gnet.layers._gn.GraphFieldEmbedding
     """
 
     def __init__(self, num_types: int, embedding_dim: int, device: torch.device | None = None):

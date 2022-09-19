@@ -10,6 +10,12 @@ from torch_m3gnet.nn.core import GatedMLP
 
 
 class AtomWiseReadout(torch.nn.Module):
+    """
+    Note
+    ----
+    m3gnet.layers._readout.ReduceReadOut
+    """
+
     def __init__(
         self,
         in_features: int,

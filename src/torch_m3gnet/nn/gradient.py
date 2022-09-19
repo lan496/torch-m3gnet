@@ -9,16 +9,18 @@ from torch_m3gnet.data.material_graph import BatchMaterialGraph
 
 
 class Gradient(torch.nn.Module):
+    """
+    Note
+    ----
+    m3gnet.models._base.BasePotential.get_efs_tensor
+    """
+
     def __init__(
         self,
         model: torch.nn.Module,
-        energy_scale: float,
-        length_scale: float,
     ):
         super().__init__()
         self.model = model
-        # self.energy_scale = energy_scale
-        # self.length_scale = length_scale
 
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         # TODO: current implementation cannot be used with spatial decomposition
