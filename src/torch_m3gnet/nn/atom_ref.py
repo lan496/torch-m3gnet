@@ -8,6 +8,12 @@ from torch_m3gnet.data.material_graph import BatchMaterialGraph
 
 
 class AtomRef(torch.nn.Module):
+    """
+    Note
+    ----
+    m3gnet.layers._atom_ref.AtomRef
+    """
+
     def __init__(
         self,
         elemental_energies: TensorType["num_types"],  # type: ignore # noqa: F821

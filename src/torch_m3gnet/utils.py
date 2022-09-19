@@ -5,10 +5,7 @@ from numpy.typing import NDArray
 from pymatgen.core import Structure
 
 
-def rotate_cell(
-    structure: Structure,
-    rotation: NDArray
-) -> Structure:
+def rotate_cell(structure: Structure, rotation: NDArray) -> Structure:
     lattice = structure.lattice.matrix
     coords = structure.cart_coords
 
@@ -19,11 +16,7 @@ def rotate_cell(
     return Structure(new_lattice, structure.species, new_coords, coords_are_cartesian=True)
 
 
-def strain_cell(
-    structure: Structure,
-    strain: NDArray,
-    delta: float
-) -> Structure:
+def strain_cell(structure: Structure, strain: NDArray, delta: float) -> Structure:
     lattice = structure.lattice.matrix
     frac_coords = structure.frac_coords
     species = structure.species
