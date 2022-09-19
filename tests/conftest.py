@@ -156,7 +156,7 @@ def config(dataset: MaterialGraphDataset) -> RunConfig:
         l_max=2,
         n_max=3,
         num_types=93,
-        embedding_dim=5,
+        embedding_dim=17,
         num_blocks=2,
         batch_size=len(dataset),  # As single batch
     )

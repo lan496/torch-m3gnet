@@ -50,5 +50,5 @@ def test_training(
         datamodule=datamodule,
         ckpt_path="best",
     )
-    assert metrics[0]["test_energy_rmse"] < 1e-2  # TODO: somewhat large error?
-    assert metrics[0]["test_forces_rmse"] < 3e-8
+    assert metrics[0]["test_energy_rmse"] < 1e-4  # TODO: somewhat large error?
+    assert metrics[0]["test_forces_rmse"] < 1e-6

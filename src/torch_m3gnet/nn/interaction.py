@@ -180,6 +180,7 @@ class ThreeBodyInteration(torch.nn.Module):
         self.gated_mlp = GatedMLP(
             in_features=self.degree,
             dimensions=[self.num_edge_features],
+            use_bias=False,
             device=device,
         )
 

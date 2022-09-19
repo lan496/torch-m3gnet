@@ -37,6 +37,7 @@ EXTRAS = {
         "pyupgrade",
         "pydocstyle",
         "nbqa",
+        "torchinfo",
     ],
     "docs": [
         "sphinx",

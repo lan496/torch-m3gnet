@@ -15,12 +15,14 @@ class GatedMLP(torch.nn.Module):
         in_features: int,
         dimensions: list[int],
         is_output: bool = False,
+        use_bias: bool = True,
         device: torch.device | None = None,
     ):
         super().__init__()
         self.in_features = in_features
         self.dimensions = dimensions
         self.is_output = is_output
+        self.use_bias = use_bias
 
         self.dense = torch.nn.Sequential()
         self.gate = torch.nn.Sequential()
@@ -36,6 +38,7 @@ class GatedMLP(torch.nn.Module):
                 torch.nn.Linear(
                     in_features=in_features_i,
                     out_features=out_features_i,
+                    bias=self.use_bias,
                     device=device,
                 )
             )
@@ -46,6 +49,7 @@ class GatedMLP(torch.nn.Module):
                 torch.nn.Linear(
                     in_features=in_features_i,
                     out_features=out_features_i,
+                    bias=self.use_bias,
                     device=device,
                 )
             )
