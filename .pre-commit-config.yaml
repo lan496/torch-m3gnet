@@ -12,7 +12,7 @@ repos:
       - id: end-of-file-fixer
   # formatter
   - repo: https://github.com/psf/black
-    rev: 22.6.0
+    rev: 22.8.0
     hooks:
     - id: black
   # linter
@@ -36,6 +36,6 @@ repos:
         args: ["--profile", "black"]
   # Notebook
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.4.0
+    rev: 1.5.0
     hooks:
       - id: nbqa-black
