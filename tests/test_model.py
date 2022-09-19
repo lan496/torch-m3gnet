@@ -56,11 +56,13 @@ def test_rotation_invariance(model, lattice_coords_types, rotation, device):
     torch.testing.assert_close(node_features, node_features2)
 
 
-def test_batch_order(model, datum):
+def test_batch_order(model, datum, device):
     # Perturb
     torch.manual_seed(0)
     for data in datum:
-        data[MaterialGraphKey.POS] += 1e-1 * (torch.rand(data[MaterialGraphKey.POS].shape) - 0.5)
+        data[MaterialGraphKey.POS] += 1e-1 * (
+            torch.rand(data[MaterialGraphKey.POS].shape, device=device) - 0.5
+        )
 
     # Forward in batch
     batch_graph = Batch.from_data_list([data.clone() for data in datum])
@@ -85,10 +87,12 @@ def test_backward(model, graph: BatchMaterialGraph):
         s.backward()
 
 
-def test_forces(model, graph):
+def test_forces(model, graph, device):
     # Perturb positions
     torch.manual_seed(0)
-    graph[MaterialGraphKey.POS] += 1e-1 * (torch.rand(graph[MaterialGraphKey.POS].shape) - 0.5)
+    graph[MaterialGraphKey.POS] += 1e-1 * (
+        torch.rand(graph[MaterialGraphKey.POS].shape, device=device) - 0.5
+    )
 
     graph = model(graph)
     forces_actual = graph[MaterialGraphKey.FORCES].clone()

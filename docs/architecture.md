@@ -40,36 +40,7 @@ h_{m}(r)
 
 Embedding layer
 
-## Three-body to bond
-
-```{math}
-  \tilde{\mathbf{v}_{i}}
-    &= \mathcal{L}_{\sigma}(\mathbf{v}_{i}) \\
-  \tilde{e}_{ij}
-    &= \sum_{k \in \mathcal{N}_{i} \backslash \{ j \} }
-          \left(
-              j_{l}(z_{ln}\frac{r_{ik}}{r_{c}}) Y_{l}^{0}(\theta_{jik}) f_{c}(r_{ij}) f_{c}(r_{ik})
-          \right)_{l=0, \dots, l_{\max}-1, n=0, \dots, n_{\max}-1}
-          \odot
-          \tilde{\mathbf{v}}_{k} \\
-  \mathbf{e}_{ij}
-      &\leftarrow \mathbf{e}_{ij}
-          + \mathcal{L}_{\mathrm{swish}}(\tilde{\mathbf{e}}_{ij}) \odot \mathcal{L}_{\mathrm{sigmoid}}(\tilde{\mathbf{e}}_{ij}) \\
-```
-{math}`j_{l}` is the {math}`l`th spherical Bessel function with roots at {math}`z_{ln} \, (n=0, \dots, n_{\max}-1)`.
-{math}`Y_{l}^{0}` is the spherical harmonics with {math}`m=0`.
-{math}`\mathcal{L}_{\sigma}` is a one-layer perceptron with activation function {math}`\sigma`.
-
-Cutoff function
-```{math}
-    f_{c}(r)
-    = 1
-        - 6 \left( \frac{r}{r_{c}} \right)^{5}
-        + 15 \left( \frac{r}{r_{c}} \right)^{4}
-        - 10 \left( \frac{r}{r_{c}} \right)^{3}
-```
-
-### Spherical Bessel function
+## Spherical Bessel function
 
 The spherical Bessel function of the first kind
 ```{math}
@@ -92,7 +63,25 @@ The derivative of spherical Bessel function of the first kind
     \quad (\mbox{DLMF 10.51.2}) \\
 ```
 
-### Spherical harmonics with {math}`m=0`
+The spherical Bessel functions {math}`\{ j_{l}(z_{ln} \frac{r}{r_{c}}) \}_{n=1,\dots}` form orthogonal basis on {math}`r \in [0, r_{c}]`,
+```{math}
+  \int_{0}^{r_{c}}
+    j_{l}(z_{ln} \frac{r}{r_{c}}) j_{l}(z_{ln'} \frac{r}{r_{c}}) r^{2} dr
+  = \frac{r_{c}^{3}}{2} \left( j_{l+1}(z_{ln}) \right)^{2} \delta_{nn'}.
+```
+Here {math}`z_{ln}` is the {math}`n`th root of {math}`j_{l}`.
+We use 
+uses normalized spherical Bessel functions [^vasp]
+```{math}
+  \chi_{ln}(r)
+    &= \sqrt{ \frac{2}{r_{c}^{3}} } \frac{ j_{l}(z_{ln}\frac{r}{r_{c}}) }{ |j_{l+1}(z_{ln})| } \\
+  \int_{0}^{r_{c}} \chi_{ln}(r) \chi_{ln'}(r) r^{2} dr
+    &= \delta_{nn'}.
+```
+
+[^vasp]: The normalization constant is slightly different from that of VASP 6.0 {cite}`PhysRevB.100.014105`.
+
+## Spherical harmonics with {math}`m=0`
 
 ```{math}
   Y_{l}^{0}(\theta)
@@ -115,6 +104,34 @@ Derivative of Legendre polynomial
   \frac{d}{d \theta} P_{n}^{(m)}(\cos \theta)
     &= -\frac{1}{\sin \theta} \left( (n+m) P_{n-1}^{(m)}(\cos \theta) - n \cos \theta P_{n}^{(m)}(\cos \theta) \right) \\
 ```
+
+## Three-body to bond
+
+```{math}
+  \tilde{\mathbf{v}_{i}}
+    &= \mathcal{L}_{\sigma}(\mathbf{v}_{i}) \\
+  \tilde{e}_{ij}
+    &= \sum_{k \in \mathcal{N}_{i} \backslash \{ j \} }
+          \left(
+              \chi_{ln}(r_{ik}) Y_{l}^{0}(\theta_{jik}) f_{c}(r_{ij}) f_{c}(r_{ik})
+          \right)_{l=0, \dots, l_{\max}-1, n=0, \dots, n_{\max}-1}
+          \odot
+          \tilde{\mathbf{v}}_{k} \\
+  \mathbf{e}_{ij}
+      &\leftarrow \mathbf{e}_{ij}
+          + \mathcal{L}_{\mathrm{swish}}(\tilde{\mathbf{e}}_{ij}) \odot \mathcal{L}_{\mathrm{sigmoid}}(\tilde{\mathbf{e}}_{ij}) \\
+```
+{math}`\mathcal{L}_{\sigma}` is a one-layer perceptron with activation function {math}`\sigma`.
+
+Cutoff function
+```{math}
+    f_{c}(r)
+    = 1
+        - 6 \left( \frac{r}{r_{c}} \right)^{5}
+        + 15 \left( \frac{r}{r_{c}} \right)^{4}
+        - 10 \left( \frac{r}{r_{c}} \right)^{3}
+```
+
 
 ## Graph Convolution
 
