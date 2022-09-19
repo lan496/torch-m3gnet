@@ -27,7 +27,6 @@ def build_model(
     length_scale: float = 1.0,  # AA
     device: torch.device | None = None,
 ) -> torch.nn.Sequential:
-    degree = n_max * l_max
     num_edge_features = embedding_dim
 
     if elemental_energies is None:
@@ -40,9 +39,9 @@ def build_model(
         ScaleLength(length_scale=length_scale),
         AtomRef(elemental_energies, device=device),
         DistanceAndAngle(),
-        EdgeFeaturizer(degree=degree, cutoff=scaled_cutoff, device=device),
-        EdgeAdjustor(degree=degree, num_edge_features=num_edge_features, device=device),
         AtomFeaturizer(num_types=num_types, embedding_dim=embedding_dim, device=device),
+        EdgeFeaturizer(degree=n_max, cutoff=scaled_cutoff, device=device),
+        EdgeAdjustor(degree=n_max, num_edge_features=num_edge_features, device=device),
     )
 
     # Convolutions
@@ -60,7 +59,7 @@ def build_model(
         )
         model.append(
             M3GNetConv(
-                degree=degree,
+                degree=n_max,
                 num_node_features=embedding_dim,
                 num_edge_features=num_edge_features,
                 device=device,

@@ -31,10 +31,9 @@ f_{m}(r)
 h_{0}(r) &= f_{0}(r) \\
 h_{m}(r)
     &= \frac{1}{\sqrt{d_{m}}} \left( f_{m}(r) + \sqrt{\frac{ e_{m} }{ d_{m-1} }} h_{m-1}(r) \right)
-    \quad (m \geq 1) \\
+    \quad (m \geq 1),
 ```
-
-{math}`m = n_{\max} l_{\max}`
+where {math}`1 \leq m < n_{\max}`
 
 ## Atom featurizer
 
