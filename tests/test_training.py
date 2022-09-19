@@ -18,13 +18,10 @@ def test_training(
 ):
     warnings.filterwarnings("ignore", module="pytorch_lightning")
 
-    seed_everything(config.seed)
+    seed_everything(config.seed, workers=True)
     accelerator = get_accelerator(device)
 
-    litmodel = LitM3GNet(
-        model=model,
-        config=config,
-    )
+    litmodel = LitM3GNet(config=config)
     datamodule = LightningDataset(
         train_dataset=dataset,
         val_dataset=dataset,  # Never do this except testing!

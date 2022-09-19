@@ -1,5 +1,58 @@
 # Network architecture
 
+## Summary
+
+```
+==========================================================================
+Layer (type:depth-idx)                             Param #
+===========================================================================
+Gradient                                           --
+├─Sequential: 1-1                                  --
+│    └─ScaleLength: 2-1                            --
+│    └─AtomRef: 2-2                                --
+│    └─DistanceAndAngle: 2-3                       --
+│    └─AtomFeaturizer: 2-4                         --
+│    │    └─Linear: 3-1                            6,080
+│    └─EdgeFeaturizer: 2-5                         --
+│    └─EdgeAdjustor: 2-6                           --
+│    │    └─Linear: 3-2                            192
+│    │    └─SiLU: 3-3                              --
+│    └─ThreeBodyInteration: 2-7                    --
+│    │    └─NormalizedSphericalBessel: 3-4         --
+│    │    └─Linear: 3-5                            585
+│    │    └─GatedMLP: 3-6                          1,152
+│    └─M3GNetConv: 2-8                             --
+│    │    └─GatedMLP: 3-7                          33,024
+│    │    └─Linear: 3-8                            192
+│    │    └─GatedMLP: 3-9                          33,024
+│    │    └─Linear: 3-10                           192
+│    └─ThreeBodyInteration: 2-9                    --
+│    │    └─NormalizedSphericalBessel: 3-11        --
+│    │    └─Linear: 3-12                           585
+│    │    └─GatedMLP: 3-13                         1,152
+│    └─M3GNetConv: 2-10                            --
+│    │    └─GatedMLP: 3-14                         33,024
+│    │    └─Linear: 3-15                           192
+│    │    └─GatedMLP: 3-16                         33,024
+│    │    └─Linear: 3-17                           192
+│    └─ThreeBodyInteration: 2-11                   --
+│    │    └─NormalizedSphericalBessel: 3-18        --
+│    │    └─Linear: 3-19                           585
+│    │    └─GatedMLP: 3-20                         1,152
+│    └─M3GNetConv: 2-12                            --
+│    │    └─GatedMLP: 3-21                         33,024
+│    │    └─Linear: 3-22                           192
+│    │    └─GatedMLP: 3-23                         33,024
+│    │    └─Linear: 3-24                           192
+│    └─AtomWiseReadout: 2-13                       --
+│    │    └─GatedMLP: 3-25                         16,770
+===========================================================================
+Total params: 227,549
+Trainable params: 227,549
+Non-trainable params: 0
+===========================================================================
+```
+
 ## Three-body computation
 
 `triplet_edge_index`
