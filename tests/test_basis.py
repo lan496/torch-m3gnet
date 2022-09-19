@@ -6,6 +6,7 @@ from torch.autograd import gradcheck
 
 from torch_m3gnet.nn.interaction import (
     SPHERICAL_BESSEL_ZEROS,
+    cutoff_function,
     legendre_cos,
     spherical_bessel,
 )
@@ -39,3 +40,10 @@ def test_legendre_cos(order):
     # Numerical grad near zero give doubtful value...
     input = torch.linspace(-1, 1, steps=16, dtype=torch.float64, requires_grad=True)
     assert gradcheck(legendre_cos, (input, order), eps=1e-4)
+
+
+def test_cutoff_function():
+    torch.testing.assert_close(
+        cutoff_function(torch.tensor([0.0, 2.0, 4.0]), 2.0),
+        torch.tensor([1.0, 0.0, 0.0]),
+    )

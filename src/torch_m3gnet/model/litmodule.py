@@ -191,6 +191,7 @@ def train_model(
     # Model
     model = build_model(
         cutoff=config.cutoff,
+        threebody_cutoff=config.threebody_cutoff,
         l_max=config.l_max,
         n_max=config.n_max,
         num_types=config.num_types,

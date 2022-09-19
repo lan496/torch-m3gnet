@@ -150,6 +150,7 @@ class ThreeBodyInteration(torch.nn.Module):
     def __init__(
         self,
         cutoff: float,
+        threebody_cutoff: float,
         l_max: int,
         n_max: int,
         num_node_features: int,
@@ -159,6 +160,7 @@ class ThreeBodyInteration(torch.nn.Module):
         super().__init__()
 
         self.cutoff = cutoff
+        self.threebody_cutoff = threebody_cutoff
         self.l_max = l_max
         self.n_max = n_max
         self.degree = self.l_max * self.n_max
@@ -183,13 +185,14 @@ class ThreeBodyInteration(torch.nn.Module):
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         rij = graph[MaterialGraphKey.EDGE_DISTANCES][graph[MaterialGraphKey.TRIPLET_EDGE_INDEX][0]]
         rik = graph[MaterialGraphKey.EDGE_DISTANCES][graph[MaterialGraphKey.TRIPLET_EDGE_INDEX][1]]
-        fc_ij: TensorType["num_triplets"] = cutoff_function(rij, self.cutoff)  # type: ignore # noqa: F821
-        fc_ik: TensorType["num_triplets"] = cutoff_function(rik, self.cutoff)  # type: ignore # noqa: F821
+        # Original implementation uses threebody_cutoff for cutoff functions
+        fc_ij: TensorType["num_triplets"] = cutoff_function(rij, self.threebody_cutoff)  # type: ignore # noqa: F821
+        fc_ik: TensorType["num_triplets"] = cutoff_function(rik, self.threebody_cutoff)  # type: ignore # noqa: F821
 
         angles: TensorType["num_triplets"] = graph[MaterialGraphKey.TRIPLET_ANGLES]  # type: ignore # noqa: F821
         sph: TensorType["l_max", "num_triplets"] = torch.stack(  # type: ignore # noqa: F821
             [
-                math.sqrt((2 * order + 1) / math.pi) * legendre_cos(angles, order)
+                math.sqrt((2 * order + 1) / (4.0 * math.pi)) * legendre_cos(angles, order)
                 for order in range(self.l_max)
             ]
         )
@@ -346,7 +349,7 @@ class SphericalBessel(torch.autograd.Function):
 
 
 class LegendreCosPolynomial(torch.autograd.Function):
-    """Legendre polynomial P_{n}(cos x)."""
+    """Legendre polynomial P_{n}(x)."""
 
     @staticmethod
     def forward(ctx, input: torch.Tensor, order: int):
@@ -382,5 +385,14 @@ legendre_cos = LegendreCosPolynomial.apply
 
 
 def cutoff_function(input: TensorType, cutoff: float) -> TensorType:
+    """
+    Note
+    ----
+    m3gnet.layers._cutoff.polynomial
+    """
     ratio = input / cutoff
-    return 1 - 6 * ratio**5 + 15 * ratio**4 - 10 * ratio**3
+    return torch.where(
+        ratio <= 1,
+        1 - 6 * ratio**5 + 15 * ratio**4 - 10 * ratio**3,
+        torch.zeros_like(input),
+    )

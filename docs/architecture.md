@@ -86,8 +86,6 @@ uses normalized spherical Bessel functions [^vasp]
 ```{math}
   Y_{l}^{0}(\theta)
     &= \sqrt{ \frac{2l+1}{4\pi} } P_{l}(\cos \theta) \\
-  \frac{d }{d \theta} Y_{l}^{0}(\theta)
-    &= \sqrt{ \frac{2l+1}{4\pi} } \frac{d}{d \theta}  P_{l}(\cos \theta) \\
 ```
 This definition adopts Condon-Shortley phase.
 
@@ -113,7 +111,7 @@ Derivative of Legendre polynomial
   \tilde{e}_{ij}
     &= \sum_{k \in \mathcal{N}_{i} \backslash \{ j \} }
           \left(
-              \chi_{ln}(r_{ik}) Y_{l}^{0}(\theta_{jik}) f_{c}(r_{ij}) f_{c}(r_{ik})
+              \chi_{ln}(r_{ik}) Y_{l}^{0}(\theta_{jik}) f_{3c}(r_{ij}) f_{3c}(r_{ik})
           \right)_{l=0, \dots, l_{\max}-1, n=0, \dots, n_{\max}-1}
           \odot
           \tilde{\mathbf{v}}_{k} \\
@@ -125,11 +123,11 @@ Derivative of Legendre polynomial
 
 Cutoff function
 ```{math}
-    f_{c}(r)
+    f_{3c}(r)
     = 1
-        - 6 \left( \frac{r}{r_{c}} \right)^{5}
-        + 15 \left( \frac{r}{r_{c}} \right)^{4}
-        - 10 \left( \frac{r}{r_{c}} \right)^{3}
+        - 6 \left( \frac{r}{r_{3c}} \right)^{5}
+        + 15 \left( \frac{r}{r_{3c}} \right)^{4}
+        - 10 \left( \frac{r}{r_{3c}} \right)^{3}
 ```
 
 

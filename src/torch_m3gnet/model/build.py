@@ -15,6 +15,7 @@ from torch_m3gnet.nn.scale import ScaleLength
 
 def build_model(
     cutoff: float,
+    threebody_cutoff: float,
     l_max: int,
     n_max: int,
     num_types: int,
@@ -33,6 +34,7 @@ def build_model(
         elemental_energies = torch.zeros(num_types, device=device)
 
     scaled_cutoff = cutoff / length_scale
+    scaled_threebody_cutoff = threebody_cutoff / length_scale
 
     model = torch.nn.Sequential(
         ScaleLength(length_scale=length_scale),
@@ -48,6 +50,7 @@ def build_model(
         model.append(
             ThreeBodyInteration(
                 cutoff=scaled_cutoff,
+                threebody_cutoff=scaled_threebody_cutoff,
                 l_max=l_max,
                 n_max=n_max,
                 num_node_features=embedding_dim,

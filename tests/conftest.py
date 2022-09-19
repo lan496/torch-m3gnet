@@ -167,6 +167,7 @@ def config(dataset: MaterialGraphDataset) -> RunConfig:
 def model(config: RunConfig, device: torch.device) -> torch.nn.Sequential:
     model = build_model(
         cutoff=config.cutoff,
+        threebody_cutoff=config.threebody_cutoff,
         l_max=config.l_max,
         n_max=config.n_max,
         num_types=config.num_types,
