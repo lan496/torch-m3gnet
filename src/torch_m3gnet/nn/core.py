@@ -39,8 +39,8 @@ class GatedMLP(torch.nn.Module):
                     device=device,
                 )
             )
-            if (i < num_layers - 1) and (not self.is_output):
-                self.dense.append(torch.nn.Sigmoid())
+            if not (self.is_output and (i == num_layers - 1)):
+                self.gate.append(torch.nn.SiLU())
 
             self.gate.append(
                 torch.nn.Linear(
@@ -50,9 +50,9 @@ class GatedMLP(torch.nn.Module):
                 )
             )
             if i == num_layers - 1:
-                self.gate.append(torch.nn.SiLU())
-            else:
                 self.gate.append(torch.nn.Sigmoid())
+            else:
+                self.gate.append(torch.nn.SiLU())
 
     def forward(self, input):
         return self.dense(input) * self.gate(input)

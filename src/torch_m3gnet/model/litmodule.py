@@ -38,6 +38,7 @@ class LitM3GNet(pl.LightningModule):
         self.config = config
 
         self.mae = torchmetrics.MeanAbsoluteError()
+        self.mse = torchmetrics.MeanSquaredError()
 
     def training_step(self, graph: BatchMaterialGraph, batch_idx: int):
         batch_size = graph[MaterialGraphKey.TOTAL_ENERGY].size(0)
@@ -56,6 +57,9 @@ class LitM3GNet(pl.LightningModule):
         # Step scheduler every epoch
         sch = self.lr_schedulers()
         sch.step()
+
+        for name, params in self.named_parameters():
+            self.loggers[0].experiment.add_histogram(name, params, self.current_epoch)
 
         return super().training_epoch_end(outputs)
 
@@ -88,18 +92,20 @@ class LitM3GNet(pl.LightningModule):
             graph[MaterialGraphKey.BATCH],
             minlength=batch_size,
         )
-        target_energy = graph[MaterialGraphKey.TOTAL_ENERGY].clone() / num_nodes_per_graph
+        target_energy = graph[MaterialGraphKey.TOTAL_ENERGY].clone()
+        target_energy_per_atom = target_energy / num_nodes_per_graph
         target_forces = graph[MaterialGraphKey.FORCES].clone()
         target_stresses = graph[MaterialGraphKey.STRESSES].clone()
 
         # Forward
         graph = self.model(graph)
 
-        predicted_energy = graph[MaterialGraphKey.TOTAL_ENERGY] / num_nodes_per_graph
+        predicted_energy = graph[MaterialGraphKey.TOTAL_ENERGY]
+        predicted_energy_per_atom = predicted_energy / num_nodes_per_graph
         predicted_forces = graph[MaterialGraphKey.FORCES]
         predicted_stresses = graph[MaterialGraphKey.STRESSES]
 
-        energy_loss = F.mse_loss(predicted_energy, target_energy, reduction="mean")  # eV/atom
+        energy_loss = F.mse_loss(predicted_energy, target_energy, reduction="mean")  # eV
         forces_diff: TensorType["batch_size"] = scatter_sum(  # type: ignore # noqa: F821
             torch.sum(torch.square(predicted_forces - target_forces), dim=1),
             index=graph[MaterialGraphKey.BATCH],
@@ -120,10 +126,10 @@ class LitM3GNet(pl.LightningModule):
             "energy_loss": energy_loss,
             "forces_loss": forces_loss,
             "stresses_loss": stresses_loss,
-            "energy_rmse": torch.sqrt(energy_loss),
+            "energy_rmse": torch.sqrt(self.mse(predicted_energy_per_atom, target_energy_per_atom)),
             "forces_rmse": torch.sqrt(forces_loss),
             "stresses_rmse": torch.sqrt(stresses_loss),
-            "energy_mae": self.mae(predicted_energy, target_energy),
+            "energy_mae": self.mae(predicted_energy_per_atom, target_energy_per_atom),
             "forces_mae": self.mae(predicted_forces, target_forces),
             "stresses_mae": self.mae(predicted_stresses, target_stresses),
         }
