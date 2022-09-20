@@ -203,11 +203,11 @@ Cutoff function
 We first fit total energies in a training dataset from atom types {math}`\{ t_{i} \}`.
 Then, we normalize the residual on the training dataset as
 ```{math}
-  E(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}) - \sum_{i=1}^{N} E_{t_{i}}
-  = N \mu
-    + \sigma \tilde{E}_{\mathrm{M3GNet}}(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}),
+  E(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N})
+  = \sum_{i=1}^{N} E_{t_{i}}
+    + \tilde{E}_{\mathrm{M3GNet}}(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}),
 ```
-where {math}`\mu = O(1), \sigma = O(1)` and {math}`\tilde{E}_{\mathrm{M3GNet}}(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}) = O(N)`.
+where {math}`\tilde{E}_{\mathrm{M3GNet}}(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}) = O(N)`.
 
 ## Loss function
 

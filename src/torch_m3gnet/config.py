@@ -18,7 +18,7 @@ class RunConfig:
     # Hyperparameter for training
     max_epochs: int = 1000
     learning_rate: float = 1e-3
-    decay_steps: int = 100
+    decay_steps: int = 200
     decay_alpha: float = 1e-2
     batch_size: int = 32
     accumulate_grad_batches: int = 1

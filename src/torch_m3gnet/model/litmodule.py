@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 
-import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
@@ -13,7 +12,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from sklearn.linear_model import LinearRegression
 from torch.utils.data import random_split
-from torch_geometric.data import LightningDataset
+from torch_geometric.loader import DataLoader
 from torch_scatter import scatter_sum
 from torchtyping import TensorType  # type: ignore
 
@@ -83,6 +82,8 @@ class LitM3GNet(pl.LightningModule):
             self.log_dict(
                 {f"train_{key}": val for key, val in metrics.items()},
                 batch_size=batch_size,
+                on_epoch=True,
+                on_step=False,
             )
 
         return metrics["loss"]
@@ -227,25 +228,26 @@ def train_model(
     # Data loader
     if num_workers == -1:
         num_workers = os.cpu_count()  # type: ignore
-    datamodule = LightningDataset(
-        train_dataset=train,
-        val_dataset=val,
-        test_dataset=test,
-        batch_size=config.batch_size,
-        num_workers=num_workers,
+    # torch_geometric.data.LightningDataset does not seem to care about shuffle flag...
+    train_loader = DataLoader(
+        train, batch_size=config.batch_size, shuffle=True, num_workers=num_workers
+    )
+    val_loader = DataLoader(
+        val, batch_size=config.batch_size, shuffle=False, num_workers=num_workers
+    )
+    test_loader = DataLoader(
+        train, batch_size=config.batch_size, shuffle=False, num_workers=num_workers
     )
 
-    elemental_energies, energy_mean, energy_scale, length_scale = fit_elemental_energies(
-        train, config.num_types
-    )
+    elemental_energies = fit_elemental_energies(train, config.num_types)
 
     # Model
     litmodel = LitM3GNet(
         config=config,
         elemental_energies=elemental_energies,
-        energy_mean=energy_mean,
-        energy_scale=energy_scale,
-        length_scale=length_scale,
+        # energy_mean=energy_mean,
+        # energy_scale=energy_scale,
+        # length_scale=length_scale,
         device=device,
     )
 
@@ -267,6 +269,7 @@ def train_model(
                 LearningRateMonitor(logging_interval="epoch"),
             ],
             max_epochs=config.max_epochs,
+            reload_dataloaders_every_n_epochs=1,  # shuffle train for each epoch
             accumulate_grad_batches=config.accumulate_grad_batches,
             logger=logger,
             accelerator=accelerator,
@@ -276,7 +279,8 @@ def train_model(
         )
         trainer.fit(
             model=litmodel,
-            datamodule=datamodule,
+            train_dataloaders=train_loader,
+            val_dataloaders=val_loader,
         )
         return
 
@@ -286,6 +290,7 @@ def train_model(
             EarlyStopping(monitor="val_loss", mode="min", patience=config.early_stopping_patience)
         ],
         max_epochs=config.max_epochs,
+        reload_dataloaders_every_n_epochs=1,  # shuffle train for each epoch
         accumulate_grad_batches=config.accumulate_grad_batches,
         logger=logger,
         accelerator=accelerator,
@@ -295,7 +300,8 @@ def train_model(
     )
     trainer.fit(
         model=litmodel,
-        datamodule=datamodule,
+        train_dataloaders=train_loader,
+        val_dataloaders=val_loader,
         ckpt_path=resume_ckpt_path,
     )
 
@@ -303,7 +309,7 @@ def train_model(
     if test is not None:
         trainer.test(
             model=litmodel,
-            datamodule=datamodule,
+            dataloaders=test_loader,
         )
 
 
@@ -325,22 +331,19 @@ def get_accelerator(device: str | torch.device | None) -> str:
 def fit_elemental_energies(
     dataset: MaterialGraphDataset,
     num_types: int,
-) -> tuple[list[float], float, float, float]:
+) -> list[float]:
     X_all = []
     for graph in dataset:
         one_hot = torch.nn.functional.one_hot(graph[MaterialGraphKey.ATOM_TYPES], num_types)
         X_all.append(torch.sum(one_hot, dim=0).to(torch.float32))
     X_all = torch.stack(X_all).detach().numpy()  # (num_structures, num_types)
-    num_atoms = np.sum(X_all, axis=1)
-    y_all = dataset.data[MaterialGraphKey.TOTAL_ENERGY].numpy() / num_atoms  # (num_structures, )
-    reg = LinearRegression(fit_intercept=True).fit(X_all, y_all)
-    mean = float(reg.intercept_)  # eV/atom
+    y_all = dataset.data[MaterialGraphKey.TOTAL_ENERGY].numpy()  # (num_structures, )
+    reg = LinearRegression(fit_intercept=False).fit(X_all, y_all)
     elemental_energies = reg.coef_.tolist()  # eV/atom
 
-    y_pred = reg.predict(X_all)  # eV/atom
-    energy_scale = float(np.mean((y_pred - y_all) ** 2))  # eV/atom
+    # y_pred = reg.predict(X_all)  # eV
+    # energy_scale = float(np.mean((y_pred - y_all) ** 2))  # eV/atom
+    # forces = dataset.data[MaterialGraphKey.FORCES]
+    # length_scale = energy_scale / torch.sqrt(torch.mean(torch.square(forces))).item()  # AA
 
-    forces = dataset.data[MaterialGraphKey.FORCES]
-    length_scale = energy_scale / torch.sqrt(torch.mean(torch.square(forces))).item()  # AA
-
-    return elemental_energies, mean, energy_scale, length_scale
+    return elemental_energies
