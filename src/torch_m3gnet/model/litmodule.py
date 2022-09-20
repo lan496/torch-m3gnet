@@ -140,7 +140,10 @@ class LitM3GNet(pl.LightningModule):
         predicted_forces = graph[MaterialGraphKey.FORCES]
         predicted_stresses = graph[MaterialGraphKey.STRESSES]
 
-        energy_loss = F.mse_loss(predicted_energy, target_energy, reduction="mean")  # eV
+        # energy_loss = F.mse_loss(predicted_energy, target_energy, reduction="mean")  # eV
+        energy_loss = F.mse_loss(
+            predicted_energy_per_atom, target_energy_per_atom, reduction="mean"
+        )  # eV/atom
         forces_diff: TensorType["batch_size"] = scatter_sum(  # type: ignore # noqa: F821
             torch.sum(torch.square(predicted_forces - target_forces), dim=1),
             index=graph[MaterialGraphKey.BATCH],
