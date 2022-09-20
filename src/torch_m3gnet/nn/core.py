@@ -43,7 +43,7 @@ class GatedMLP(torch.nn.Module):
                 )
             )
             if not (self.is_output and (i == num_layers - 1)):
-                self.gate.append(torch.nn.SiLU())
+                self.dense.append(torch.nn.SiLU())
 
             self.gate.append(
                 torch.nn.Linear(

@@ -196,9 +196,9 @@ class LitM3GNet(pl.LightningModule):
 
 
 def train_model(
-    train_and_val: MaterialGraphDataset,
-    test: MaterialGraphDataset,
     config: RunConfig,
+    train_and_val: MaterialGraphDataset | tuple[MaterialGraphDataset, MaterialGraphDataset],
+    test: MaterialGraphDataset | None = None,
     resume_ckpt_path: str | None = None,
     device: str | None = None,
     num_workers: int = -1,
@@ -209,14 +209,17 @@ def train_model(
     # Fix seed
     seed_everything(config.seed, workers=True)
 
-    # Split dataset
-    val_size = int(len(train_and_val) * config.val_ratio)
-    train_size = len(train_and_val) - val_size
-    train, val = random_split(
-        train_and_val,
-        [train_size, val_size],
-        generator=torch.Generator().manual_seed(config.seed),
-    )
+    if len(train_and_val) == 2:
+        train, val = train_and_val
+    else:
+        # Split dataset
+        val_size = int(len(train_and_val) * config.val_ratio)
+        train_size = len(train_and_val) - val_size
+        train, val = random_split(
+            train_and_val,
+            [train_size, val_size],
+            generator=torch.Generator().manual_seed(config.seed),
+        )
 
     # Data loader
     if num_workers == -1:
@@ -230,7 +233,7 @@ def train_model(
     )
 
     elemental_energies, energy_mean, energy_scale, length_scale = fit_elemental_energies(
-        train.dataset, config.num_types
+        train, config.num_types
     )
 
     # Model
@@ -266,6 +269,7 @@ def train_model(
             accelerator=accelerator,
             devices=1,
             overfit_batches=1,
+            log_every_n_steps=10,
         )
         trainer.fit(
             model=litmodel,
@@ -283,6 +287,7 @@ def train_model(
         logger=logger,
         accelerator=accelerator,
         devices=1,
+        log_every_n_steps=10,
         # profiler="simple",
     )
     trainer.fit(
@@ -292,10 +297,11 @@ def train_model(
     )
 
     # Test
-    trainer.test(
-        model=litmodel,
-        datamodule=datamodule,
-    )
+    if test is not None:
+        trainer.test(
+            model=litmodel,
+            datamodule=datamodule,
+        )
 
 
 def get_accelerator(device: str | torch.device | None) -> str:
