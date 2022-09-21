@@ -37,6 +37,11 @@ EXTRAS = {
         "pyupgrade",
         "pydocstyle",
         "nbqa",
+        "torchinfo",
+        "notebook",
+        "ipython",
+        "ipykernel",
+        "seaborn",
     ],
     "docs": [
         "sphinx",

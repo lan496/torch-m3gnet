@@ -156,7 +156,7 @@ def config(dataset: MaterialGraphDataset) -> RunConfig:
         l_max=2,
         n_max=3,
         num_types=93,
-        embedding_dim=5,
+        embedding_dim=17,
         num_blocks=2,
         batch_size=len(dataset),  # As single batch
     )
@@ -167,13 +167,12 @@ def config(dataset: MaterialGraphDataset) -> RunConfig:
 def model(config: RunConfig, device: torch.device) -> torch.nn.Sequential:
     model = build_model(
         cutoff=config.cutoff,
+        threebody_cutoff=config.threebody_cutoff,
         l_max=config.l_max,
         n_max=config.n_max,
         num_types=config.num_types,
         embedding_dim=config.embedding_dim,
         num_blocks=config.num_blocks,
-        # scaled_elemental_energies=scaled_elemental_energies,
-        # scale=scale,
         device=device,
     )
     return model

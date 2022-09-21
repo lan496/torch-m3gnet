@@ -8,14 +8,14 @@ from torch_geometric.data import Batch
 
 from torch_m3gnet.data import MaterialGraphKey
 from torch_m3gnet.data.material_graph import BatchMaterialGraph, MaterialGraph
-from torch_m3gnet.utils import rotate_cell
+from torch_m3gnet.utils import rotate_cell, strain_cell
 
 
 def test_model(model, graph: BatchMaterialGraph):
     graph = model(graph)
     assert not torch.any(torch.isnan(graph[MaterialGraphKey.NODE_FEATURES]))
     assert not torch.any(torch.isnan(graph[MaterialGraphKey.EDGE_ATTR]))
-    assert not torch.any(torch.isnan(graph[MaterialGraphKey.ATOMIC_ENERGIES]))
+    assert not torch.any(torch.isnan(graph[MaterialGraphKey.SCALED_ATOMIC_ENERGIES]))
 
 
 def test_three_body_interaction(model, graph: BatchMaterialGraph):
@@ -47,8 +47,7 @@ def test_rotation_invariance(model, lattice_coords_types, rotation, device):
     node_features = graph[MaterialGraphKey.NODE_FEATURES]
 
     assert np.allclose(np.dot(rotation, rotation.T), np.eye(3))
-    lattice2, cart_coords2 = rotate_cell(lattice, cart_coords, rotation)
-    structure2 = Structure(lattice2, species, cart_coords2, coords_are_cartesian=True)
+    structure2 = rotate_cell(structure, rotation)
     graph2 = Batch.from_data_list([MaterialGraph.from_structure(structure2, 5.0, 4.0).to(device)])
 
     graph2 = model(graph2)
@@ -57,11 +56,13 @@ def test_rotation_invariance(model, lattice_coords_types, rotation, device):
     torch.testing.assert_close(node_features, node_features2)
 
 
-def test_batch_order(model, datum):
+def test_batch_order(model, datum, device):
     # Perturb
     torch.manual_seed(0)
     for data in datum:
-        data[MaterialGraphKey.POS] += 1e-1 * (torch.rand(data[MaterialGraphKey.POS].shape) - 0.5)
+        data[MaterialGraphKey.POS] += 1e-1 * (
+            torch.rand(data[MaterialGraphKey.POS].shape, device=device) - 0.5
+        )
 
     # Forward in batch
     batch_graph = Batch.from_data_list([data.clone() for data in datum])
@@ -86,10 +87,12 @@ def test_backward(model, graph: BatchMaterialGraph):
         s.backward()
 
 
-def test_forces(model, graph):
+def test_forces(model, graph, device):
     # Perturb positions
     torch.manual_seed(0)
-    graph[MaterialGraphKey.POS] += 1e-1 * (torch.rand(graph[MaterialGraphKey.POS].shape) - 0.5)
+    graph[MaterialGraphKey.POS] += 1e-1 * (
+        torch.rand(graph[MaterialGraphKey.POS].shape, device=device) - 0.5
+    )
 
     graph = model(graph)
     forces_actual = graph[MaterialGraphKey.FORCES].clone()
@@ -115,18 +118,6 @@ def test_forces(model, graph):
                 atol=1e-3,
                 rtol=1e-2,
             )
-
-
-def strain_cell(structure: Structure, strain, delta) -> Structure:
-    lattice = structure.lattice.matrix
-    frac_coords = structure.frac_coords
-    species = structure.species
-
-    new_lattice = lattice @ (np.eye(3) + delta * strain)
-    new_cart_coords = frac_coords @ new_lattice
-    new_structure = Structure(new_lattice, species, new_cart_coords, coords_are_cartesian=True)
-
-    return new_structure
 
 
 @pytest.mark.skip(reason="Too high noise to compare with numerical difference")

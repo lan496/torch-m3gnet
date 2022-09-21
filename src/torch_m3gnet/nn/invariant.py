@@ -11,12 +11,16 @@ class DistanceAndAngle(torch.nn.Module):
     Forward function supplies the following attributes:
         - MaterialGraphKey.EDGE_DISTANCES
         - MaterialGraphKey.TRIPLET_ANGLES
+
+    Note
+    ----
+    m3gnet.graph._compute.tf_compute_distance_angle
     """
 
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         batch = graph[MaterialGraphKey.BATCH]
-        lattice = graph[MaterialGraphKey.LATTICE]
-        pos = graph[MaterialGraphKey.POS]
+        lattice = graph[MaterialGraphKey.SCALED_LATTICE]  # unitless
+        pos = graph[MaterialGraphKey.SCALED_POS]  # unitless
         edge_index = graph[MaterialGraphKey.EDGE_INDEX]
         edge_cell_shift = graph[MaterialGraphKey.EDGE_CELL_SHIFT]
         triplet_edge_index = graph[MaterialGraphKey.TRIPLET_EDGE_INDEX]
@@ -33,7 +37,7 @@ class DistanceAndAngle(torch.nn.Module):
         cos_jik: TensorType["num_triplets"] = torch.sum(vij * vik, axis=1) / (rij * rik)  # type: ignore # noqa: F821
 
         graph[MaterialGraphKey.EDGE_DISTANCES] = distances
-        graph[MaterialGraphKey.TRIPLET_ANGLES] = cos_jik
+        graph[MaterialGraphKey.TRIPLET_ANGLES] = torch.clamp(cos_jik, min=-1, max=1)
 
         return graph
 
@@ -47,8 +51,9 @@ class DistanceAndAngle(torch.nn.Module):
     ) -> TensorType["num_edges", 3]:  # type: ignore # noqa: F821
         """Return displacements from site-i to site-j."""
         batch_edge: TensorType["num_edges"] = batch[edge_index[0]]  # type: ignore # noqa: F821
+        # einsum("ip,ipa->ia", edge_cell_shift, lattice[batch_edge])
         shift_vecs: TensorType["num_edegs", 3] = torch.sum(  # type: ignore # noqa: F821
             edge_cell_shift.to(torch.float)[:, :, None] * lattice[batch_edge], dim=1
         )
-        pair_vecs = pos[edge_index[1]] + shift_vecs - pos[edge_index[0]]
+        pair_vecs: TensorType["num_edges", 3] = pos[edge_index[1]] + shift_vecs - pos[edge_index[0]]  # type: ignore # noqa: F821
         return pair_vecs

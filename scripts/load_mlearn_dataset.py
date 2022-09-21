@@ -121,9 +121,8 @@ def main(
         raise ValueError(f"Dataset for specified element {element} does not exist.")
 
     train_model(
-        train_and_val=train,
-        test=test,
         config=config,
+        train_and_val=(train, test),
         resume_ckpt_path=resume_ckpt_path,
         device=device,
         num_workers=num_workers,

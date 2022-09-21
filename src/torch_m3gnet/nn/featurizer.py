@@ -13,6 +13,10 @@ class AtomFeaturizer(torch.nn.Module):
 
     Forward function supplies the following attributes:
         - MaterialGraphKey.NODE_FEATURES
+
+    Note
+    ----
+    m3gnet.layers._gn.GraphFieldEmbedding
     """
 
     def __init__(self, num_types: int, embedding_dim: int, device: torch.device | None = None):
@@ -39,14 +43,20 @@ class EdgeFeaturizer(torch.nn.Module):
 
     Forward function supplies the following attributes:
         - MaterialGraphKey.EDGE_WEIGHTS
+
+    Note
+    ----
+    m3gnet.layers._bond.PairRadialBasisExpansion
+    m3gnet.layers._basis.RadialBasisFunctions
+    m3gnet.utils._math._get_lambda_func
     """
 
     def __init__(self, degree: int, cutoff: float, device: torch.device | None = None):
         super().__init__()
 
-        self._degree = degree
-        self._cutoff = cutoff
-        self._device = device
+        self.degree = degree
+        self.cutoff = cutoff
+        self.device = device
 
         iota = torch.arange(self.degree, device=device)
         self.em = (iota**2) * ((iota + 2) ** 2) / (4 * ((iota + 1) ** 4) + 1)
@@ -68,28 +78,10 @@ class EdgeFeaturizer(torch.nn.Module):
             )
         self.coeff = self.coeff.to(device)
 
-    @property
-    def degree(self) -> int:
-        """Return number of basis functions."""
-        return self._degree
-
-    @property
-    def cutoff(self) -> float:
-        return self._cutoff
-
-    @property
-    def device(self) -> torch.device:
-        return self._device
-
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         distances: TensorType["num_edges"] = graph[MaterialGraphKey.EDGE_DISTANCES]  # type: ignore # noqa: F821
         num_edges = distances.size(0)
 
-        # for m in range(self.degree):
-        #     fm[m] = self.coeff[m] * (
-        #         torch.sinc((m + 1) * torch.pi / self.cutoff * distances)
-        #         + torch.sinc((m + 2) * torch.pi / self.cutoff * distances)
-        #     )
         iota = torch.arange(self.degree, device=self.device)
         fm: TensorType["degree", "num_edges"] = self.coeff[:, None] * (  # type: ignore # noqa: F821
             torch.sinc((iota[:, None] + 1) * torch.pi / self.cutoff * distances[None, :])

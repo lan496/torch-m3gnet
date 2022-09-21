@@ -1,0 +1,6 @@
+root: results/mpf
+batch_size: 8
+accumulate_grad_batches: 4
+
+force_weight: 1
+stress_weight: 0

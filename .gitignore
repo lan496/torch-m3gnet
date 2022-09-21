@@ -139,3 +139,5 @@ docs_build/
 results/
 lightning_logs/
 codecov
+debug/
+.vscode/

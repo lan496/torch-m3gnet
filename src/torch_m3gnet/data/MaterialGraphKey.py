@@ -14,6 +14,8 @@ NUM_EDGES = "num_edges"
 NUM_TRIPLETS = "num_triplets"
 
 # Derived property
+SCALED_POS = "scaled_pos"
+SCALED_LATTICE = "scaled_lattice"
 EDGE_DISTANCES = "edge_distances"
 EDGE_WEIGHTS = "edge_weights"
 TRIPLET_ANGLES = "triplet_angles"
@@ -24,8 +26,10 @@ NODE_FEATURES = "x"
 EDGE_ATTR = "edge_attr"
 
 # Targets
-ATOMIC_ENERGIES = "atomic_energies"
-TOTAL_ENERGY = "total_energy"
+SCALED_ATOMIC_ENERGIES = "scaled_atomic_energies"  # unitless
+# ATOMIC_ENERGIES = "atomic_energies"  # eV/atom
+SCALED_TOTAL_ENERGY = "scaled_total_energy"  # unitless
+TOTAL_ENERGY = "total_energy"  # eV
 FORCES = "forces"
 STRESSES = "stresses"
 

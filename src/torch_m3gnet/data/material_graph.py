@@ -89,6 +89,8 @@ class MaterialGraph(Data):
             num_edges=num_edges,
             num_triplets=num_triplets,
             # Derived properties
+            scaled_pos=None,
+            scaled_lattice=None,
             edge_distances=None,
             triplet_angles=None,
             edge_weights=None,
@@ -97,7 +99,8 @@ class MaterialGraph(Data):
             x=None,
             edge_attr=None,
             # Targets
-            atomic_energies=None,
+            scaled_atomic_energies=None,
+            scaled_total_energy=None,
             total_energy=None,
             forces=None,
             stresses=None,

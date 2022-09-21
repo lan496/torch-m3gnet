@@ -10,19 +10,23 @@ from torch_m3gnet.nn.core import GatedMLP
 
 
 class AtomWiseReadout(torch.nn.Module):
+    """
+    Note
+    ----
+    m3gnet.layers._readout.ReduceReadOut
+    """
+
     def __init__(
         self,
         in_features: int,
         num_layers: int,
-        mean: float,
         scale: float,
         device: torch.device | None = None,
     ):
         super().__init__()
         self.in_features = in_features
         self.num_layers = num_layers
-        self.mean = mean  # eV/atom
-        self.scale = scale  # eV/atom
+        self.scale = scale  # eV
 
         dimensions = [self.in_features] * (self.num_layers - 1) + [1]
         self.gated = GatedMLP(
@@ -39,13 +43,16 @@ class AtomWiseReadout(torch.nn.Module):
         # Elemental energies from AtomRef
         elemental_energies: TensorType["num_nodes"] = graph[MaterialGraphKey.ELEMENTAL_ENERGIES]  # type: ignore # noqa: F821
 
-        graph[MaterialGraphKey.ATOMIC_ENERGIES] = (
-            self.mean + self.scale * atomic_energy + elemental_energies
-        )
-        graph[MaterialGraphKey.TOTAL_ENERGY] = scatter_sum(
-            graph[MaterialGraphKey.ATOMIC_ENERGIES],
+        graph[MaterialGraphKey.SCALED_ATOMIC_ENERGIES] = (
+            elemental_energies / self.scale + atomic_energy
+        )  # unitless
+        graph[MaterialGraphKey.SCALED_TOTAL_ENERGY] = scatter_sum(
+            graph[MaterialGraphKey.SCALED_ATOMIC_ENERGIES],
             index=graph[MaterialGraphKey.BATCH],
             dim_size=graph[MaterialGraphKey.LATTICE].size(0),
+        )
+        graph[MaterialGraphKey.TOTAL_ENERGY] = (
+            self.scale * graph[MaterialGraphKey.SCALED_TOTAL_ENERGY]
         )
 
         return graph

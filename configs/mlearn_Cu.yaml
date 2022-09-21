@@ -1,3 +1,7 @@
 root: results/mlearn_Cu
-batch_size: 16
+test_ratio: 0
+batch_size: 8
 accumulate_grad_batches: 2
+
+force_weight: 1
+stress_weight: 0

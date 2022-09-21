@@ -10,6 +10,7 @@ from torch_m3gnet.data import MaterialGraphKey
 from torch_m3gnet.data.material_graph import BatchMaterialGraph
 from torch_m3gnet.nn.core import GatedMLP
 
+# SPHERICAL_BESSEL_ZEROS[l] is roots of j_l
 SPHERICAL_BESSEL_ZEROS = [
     [
         3.141592653589793,
@@ -139,11 +140,18 @@ class ThreeBodyInteration(torch.nn.Module):
 
     Forward function updates the following attributes:
         - MaterialGraphKey.EDGE_ATTR
+
+    Note
+    ----
+    m3gnet.layers._three_body.SphericalBesselWithHarmonics
+    m3gnet.utils._math.combine_sbf_shf
+    m3gnet.layres._bond.ThreeDInteraction
     """
 
     def __init__(
         self,
         cutoff: float,
+        threebody_cutoff: float,
         l_max: int,
         n_max: int,
         num_node_features: int,
@@ -153,48 +161,45 @@ class ThreeBodyInteration(torch.nn.Module):
         super().__init__()
 
         self.cutoff = cutoff
+        self.threebody_cutoff = threebody_cutoff
         self.l_max = l_max
         self.n_max = n_max
         self.degree = self.l_max * self.n_max
         self.num_node_features = num_node_features
         self.num_edge_features = num_edge_features
+        self.device = device
 
-        self.spherical_bessel_zeros = torch.tensor(SPHERICAL_BESSEL_ZEROS, device=device)
-        if self.spherical_bessel_zeros.size(0) < self.l_max:
-            raise ValueError("Too large l_max is specified.")
-        if self.spherical_bessel_zeros.size(1) < self.n_max:
-            raise ValueError("Too large n_max is specified.")
-        self.spherical_bessel_zeros = self.spherical_bessel_zeros[: self.l_max, : self.n_max]
+        self.nsb = NormalizedSphericalBessel(
+            cutoff=self.cutoff,
+            l_max=self.l_max,
+            n_max=self.n_max,
+            device=self.device,
+        )
 
         self.linear_sigmoid1 = torch.nn.Linear(self.num_node_features, self.degree, device=device)
         self.gated_mlp = GatedMLP(
             in_features=self.degree,
             dimensions=[self.num_edge_features],
+            use_bias=False,
             device=device,
         )
 
     def forward(self, graph: BatchMaterialGraph) -> BatchMaterialGraph:
         rij = graph[MaterialGraphKey.EDGE_DISTANCES][graph[MaterialGraphKey.TRIPLET_EDGE_INDEX][0]]
         rik = graph[MaterialGraphKey.EDGE_DISTANCES][graph[MaterialGraphKey.TRIPLET_EDGE_INDEX][1]]
-        fc_ij: TensorType["num_triplets"] = cutoff_function(rij, self.cutoff)  # type: ignore # noqa: F821
-        fc_ik: TensorType["num_triplets"] = cutoff_function(rik, self.cutoff)  # type: ignore # noqa: F821
+        # Original implementation uses threebody_cutoff for cutoff functions
+        fc_ij: TensorType["num_triplets"] = cutoff_function(rij, self.threebody_cutoff)  # type: ignore # noqa: F821
+        fc_ik: TensorType["num_triplets"] = cutoff_function(rik, self.threebody_cutoff)  # type: ignore # noqa: F821
 
         angles: TensorType["num_triplets"] = graph[MaterialGraphKey.TRIPLET_ANGLES]  # type: ignore # noqa: F821
         sph: TensorType["l_max", "num_triplets"] = torch.stack(  # type: ignore # noqa: F821
             [
-                math.sqrt((2 * order + 1) / math.pi) * legendre_cos(angles, order)
+                math.sqrt((2 * order + 1) / (4.0 * math.pi)) * legendre_cos(angles, order)
                 for order in range(self.l_max)
             ]
         )
 
-        jnlk: TensorType["l_max", "n_max", "num_triplets"] = torch.stack(  # type: ignore # noqa: F821
-            [
-                spherical_bessel(
-                    self.spherical_bessel_zeros[order][:, None] * rik[None, :] / self.cutoff, order
-                )
-                for order in range(self.l_max)
-            ]
-        )
+        chi_lnk: TensorType["l_max", "n_max", "num_triplets"] = self.nsb(rik)  # type: ignore # noqa: F821
 
         mid_node_features: TensorType["num_nodes", "degree"] = self.linear_sigmoid1(graph[MaterialGraphKey.NODE_FEATURES])  # type: ignore # noqa: F821
         mid_node_features = torch.sigmoid(mid_node_features)
@@ -202,7 +207,7 @@ class ThreeBodyInteration(torch.nn.Module):
 
         # Summation over triplets including edge i-j
         node_index_k: TensorType["num_triplets"] = graph[MaterialGraphKey.EDGE_INDEX][1][graph[MaterialGraphKey.TRIPLET_EDGE_INDEX][1]]  # type: ignore # noqa: F821
-        mid_edge_features_tmp: TensorType["l_max", "n_max", "num_triplets"] = jnlk * sph[:, None, :] * fc_ij[None, None, :] * fc_ik[None, None, :] * mid_node_features_reshaped[:, :, node_index_k]  # type: ignore # noqa: F821
+        mid_edge_features_tmp: TensorType["l_max", "n_max", "num_triplets"] = chi_lnk * sph[:, None, :] * fc_ij[None, None, :] * fc_ik[None, None, :] * mid_node_features_reshaped[:, :, node_index_k]  # type: ignore # noqa: F821
         num_edges = graph[MaterialGraphKey.EDGE_DISTANCES].size(0)
         mid_edge_features: TensorType["degree", "num_edges"] = scatter_sum(  # type: ignore # noqa: F821
             # ["degree", "num_triplets"]
@@ -216,6 +221,64 @@ class ThreeBodyInteration(torch.nn.Module):
         graph[MaterialGraphKey.EDGE_ATTR] = graph[MaterialGraphKey.EDGE_ATTR] + edge_update
 
         return graph
+
+
+class NormalizedSphericalBessel(torch.nn.Module):
+    """Normalized spherical bessel function with cutoff radius.
+
+    Note
+    ----
+    m3gnet.utils._math.SphericalBesselFunction
+    """
+
+    def __init__(
+        self,
+        cutoff: float,
+        l_max: int,
+        n_max: int,
+        device: torch.device | None = None,
+    ):
+        super().__init__()
+
+        self.cutoff = cutoff
+        self.l_max = l_max
+        self.n_max = n_max
+        self.device = device
+
+        self.spherical_bessel_zeros = torch.tensor(SPHERICAL_BESSEL_ZEROS, device=device)
+        # One more larger `l` is required for nomalization constants
+        if self.spherical_bessel_zeros.size(0) < self.l_max + 1:
+            raise ValueError("Too large l_max is specified.")
+        if self.spherical_bessel_zeros.size(1) < self.n_max:
+            raise ValueError("Too large n_max is specified.")
+
+        # Normalization constants
+        self.factors: TensorType["l_max", "n_max"] = torch.stack(  # type: ignore # noqa: F821
+            [
+                math.sqrt(2 / (self.cutoff**3))
+                / torch.abs(
+                    spherical_bessel(
+                        self.spherical_bessel_zeros[order + 1, : self.n_max], order + 1
+                    )
+                )
+                for order in range(self.l_max)
+            ]
+        )
+
+    def forward(self, rs: TensorType["num_r"]) -> TensorType["l_max", "n_max", "num_r"]:  # type: ignore # noqa: F821
+        jln: TensorType["l_max", "n_max", "num_r"] = torch.stack(  # type: ignore # noqa: F821
+            [
+                spherical_bessel(
+                    self.spherical_bessel_zeros[order][: self.n_max, None]
+                    * rs[None, :]
+                    / self.cutoff,
+                    order,
+                )
+                for order in range(self.l_max)
+            ]
+        )
+        chi_ln = jln / self.factors[:, :, None]
+        return chi_ln
 
 
 class SphericalBessel(torch.autograd.Function):
@@ -288,7 +351,7 @@ class SphericalBessel(torch.autograd.Function):
 
 
 class LegendreCosPolynomial(torch.autograd.Function):
-    """Legendre polynomial P_{n}(cos x)."""
+    """Legendre polynomial P_{n}(x)."""
 
     @staticmethod
     def forward(ctx, input: torch.Tensor, order: int):
@@ -324,5 +387,14 @@ legendre_cos = LegendreCosPolynomial.apply
 
 
 def cutoff_function(input: TensorType, cutoff: float) -> TensorType:
+    """
+    Note
+    ----
+    m3gnet.layers._cutoff.polynomial
+    """
     ratio = input / cutoff
-    return 1 - 6 * ratio**5 + 15 * ratio**4 - 10 * ratio**3
+    return torch.where(
+        ratio <= 1,
+        1 - 6 * ratio**5 + 15 * ratio**4 - 10 * ratio**3,
+        torch.zeros_like(input),
+    )

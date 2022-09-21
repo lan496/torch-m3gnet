@@ -18,12 +18,14 @@ class RunConfig:
     # Hyperparameter for training
     max_epochs: int = 1000
     learning_rate: float = 1e-3
-    decay_steps: int = 100
+    decay_steps: int = 200
     decay_alpha: float = 1e-2
     batch_size: int = 32
     accumulate_grad_batches: int = 1
-    val_ratio: float = 0.2
+    val_ratio: float = 0.1
+    test_ratio: float = 0.1
     early_stopping_patience: int = 200
+    energy_weight: float = 1.0
     force_weight: float = 1.0
     stress_weight: float = 0.1
     # Misc
