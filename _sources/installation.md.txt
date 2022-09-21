@@ -17,9 +17,9 @@ pip install -e ".[dev,docs]"
 ```shell
 docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t m3gnet -f containers/Dockerfile .
 
-docker run --gpus all -it  -v $(pwd):/app -t m3gnet m3gnet
+docker run --gpus all -it  -v $(pwd):/app -p 6006:6006 --name m3gnet m3gnet
 # Specify GPU
-# docker run --gpus '"device=1"' -it  -v $(pwd):/app -t m3gnet
+# docker run --gpus '"device=1"' -it  -v $(pwd):/app --name m3gnet
 
 # In container
 pip install -e ".[dev]"

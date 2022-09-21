@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Network architecture &#8212; torch-m3gnet 0.1.dev43+g70976d6</title>
+    <title>Network architecture &#8212; torch-m3gnet 0.1.dev61+g4e4539a</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -74,7 +74,7 @@
       
       
       
-      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev43+g70976d6</h1>
+      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev61+g4e4539a</h1>
       
     </a>
 </div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
@@ -251,6 +251,11 @@ title="Print to PDF"
     <nav id="bd-toc-nav" aria-label="Page">
         <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#summary">
+   Summary
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#three-body-computation">
    Three-body computation
   </a>
@@ -266,24 +271,22 @@ title="Print to PDF"
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#spherical-bessel-function">
+   Spherical Bessel function
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#spherical-harmonics-with-m-0">
+   Spherical harmonics with
+   <span class="math notranslate nohighlight">
+    \(m=0\)
+   </span>
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#three-body-to-bond">
    Three-body to bond
   </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#spherical-bessel-function">
-     Spherical Bessel function
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#spherical-harmonics-with-m-0">
-     Spherical harmonics with
-     <span class="math notranslate nohighlight">
-      \(m=0\)
-     </span>
-    </a>
-   </li>
-  </ul>
  </li>
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#graph-convolution">
@@ -330,6 +333,11 @@ title="Print to PDF"
                         <nav aria-label="Page">
                             <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#summary">
+   Summary
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#three-body-computation">
    Three-body computation
   </a>
@@ -345,24 +353,22 @@ title="Print to PDF"
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#spherical-bessel-function">
+   Spherical Bessel function
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#spherical-harmonics-with-m-0">
+   Spherical harmonics with
+   <span class="math notranslate nohighlight">
+    \(m=0\)
+   </span>
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#three-body-to-bond">
    Three-body to bond
   </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#spherical-bessel-function">
-     Spherical Bessel function
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#spherical-harmonics-with-m-0">
-     Spherical harmonics with
-     <span class="math notranslate nohighlight">
-      \(m=0\)
-     </span>
-    </a>
-   </li>
-  </ul>
  </li>
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#graph-convolution">
@@ -401,6 +407,59 @@ title="Print to PDF"
                 
   <section id="network-architecture">
 <h1>Network architecture<a class="headerlink" href="#network-architecture" title="Permalink to this headline">#</a></h1>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">#</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>==========================================================================
+Layer (type:depth-idx)                             Param #
+===========================================================================
+Gradient                                           --
+├─Sequential: 1-1                                  --
+│    └─ScaleLength: 2-1                            --
+│    └─AtomRef: 2-2                                --
+│    └─DistanceAndAngle: 2-3                       --
+│    └─AtomFeaturizer: 2-4                         --
+│    │    └─Linear: 3-1                            6,080
+│    └─EdgeFeaturizer: 2-5                         --
+│    └─EdgeAdjustor: 2-6                           --
+│    │    └─Linear: 3-2                            192
+│    │    └─SiLU: 3-3                              --
+│    └─ThreeBodyInteration: 2-7                    --
+│    │    └─NormalizedSphericalBessel: 3-4         --
+│    │    └─Linear: 3-5                            585
+│    │    └─GatedMLP: 3-6                          1,152
+│    └─M3GNetConv: 2-8                             --
+│    │    └─GatedMLP: 3-7                          33,024
+│    │    └─Linear: 3-8                            192
+│    │    └─GatedMLP: 3-9                          33,024
+│    │    └─Linear: 3-10                           192
+│    └─ThreeBodyInteration: 2-9                    --
+│    │    └─NormalizedSphericalBessel: 3-11        --
+│    │    └─Linear: 3-12                           585
+│    │    └─GatedMLP: 3-13                         1,152
+│    └─M3GNetConv: 2-10                            --
+│    │    └─GatedMLP: 3-14                         33,024
+│    │    └─Linear: 3-15                           192
+│    │    └─GatedMLP: 3-16                         33,024
+│    │    └─Linear: 3-17                           192
+│    └─ThreeBodyInteration: 2-11                   --
+│    │    └─NormalizedSphericalBessel: 3-18        --
+│    │    └─Linear: 3-19                           585
+│    │    └─GatedMLP: 3-20                         1,152
+│    └─M3GNetConv: 2-12                            --
+│    │    └─GatedMLP: 3-21                         33,024
+│    │    └─Linear: 3-22                           192
+│    │    └─GatedMLP: 3-23                         33,024
+│    │    └─Linear: 3-24                           192
+│    └─AtomWiseReadout: 2-13                       --
+│    │    └─GatedMLP: 3-25                         16,770
+===========================================================================
+Total params: 227,549
+Trainable params: 227,549
+Non-trainable params: 0
+===========================================================================
+</pre></div>
+</div>
+</section>
 <section id="three-body-computation">
 <h2>Three-body computation<a class="headerlink" href="#three-body-computation" title="Permalink to this headline">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">triplet_edge_index</span></code></p>
@@ -428,40 +487,15 @@ f_{m}(r)
 h_{0}(r) &amp;= f_{0}(r) \\
 h_{m}(r)
     &amp;= \frac{1}{\sqrt{d_{m}}} \left( f_{m}(r) + \sqrt{\frac{ e_{m} }{ d_{m-1} }} h_{m-1}(r) \right)
-    \quad (m \geq 1) \\\end{split}\]</div>
-<p><span class="math notranslate nohighlight">\(m = n_{\max} l_{\max}\)</span></p>
+    \quad (m \geq 1),\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(1 \leq m &lt; n_{\max}\)</span></p>
 </section>
 <section id="atom-featurizer">
 <h2>Atom featurizer<a class="headerlink" href="#atom-featurizer" title="Permalink to this headline">#</a></h2>
 <p>Embedding layer</p>
 </section>
-<section id="three-body-to-bond">
-<h2>Three-body to bond<a class="headerlink" href="#three-body-to-bond" title="Permalink to this headline">#</a></h2>
-<div class="math notranslate nohighlight">
-\[\begin{split}  \tilde{\mathbf{v}_{i}}
-    &amp;= \mathcal{L}_{\sigma}(\mathbf{v}_{i}) \\
-  \tilde{e}_{ij}
-    &amp;= \sum_{k \in \mathcal{N}_{i} \backslash \{ j \} }
-          \left(
-              j_{l}(z_{ln}\frac{r_{ik}}{r_{c}}) Y_{l}^{0}(\theta_{jik}) f_{c}(r_{ij}) f_{c}(r_{ik})
-          \right)_{l=0, \dots, l_{\max}-1, n=0, \dots, n_{\max}-1}
-          \odot
-          \tilde{\mathbf{v}}_{k} \\
-  \mathbf{e}_{ij}
-      &amp;\leftarrow \mathbf{e}_{ij}
-          + \mathcal{L}_{\mathrm{swish}}(\tilde{\mathbf{e}}_{ij}) \odot \mathcal{L}_{\mathrm{sigmoid}}(\tilde{\mathbf{e}}_{ij}) \\\end{split}\]</div>
-<p><span class="math notranslate nohighlight">\(j_{l}\)</span> is the <span class="math notranslate nohighlight">\(l\)</span>th spherical Bessel function with roots at <span class="math notranslate nohighlight">\(z_{ln} \, (n=0, \dots, n_{\max}-1)\)</span>.
-<span class="math notranslate nohighlight">\(Y_{l}^{0}\)</span> is the spherical harmonics with <span class="math notranslate nohighlight">\(m=0\)</span>.
-<span class="math notranslate nohighlight">\(\mathcal{L}_{\sigma}\)</span> is a one-layer perceptron with activation function <span class="math notranslate nohighlight">\(\sigma\)</span>.</p>
-<p>Cutoff function</p>
-<div class="math notranslate nohighlight">
-\[    f_{c}(r)
-    = 1
-        - 6 \left( \frac{r}{r_{c}} \right)^{5}
-        + 15 \left( \frac{r}{r_{c}} \right)^{4}
-        - 10 \left( \frac{r}{r_{c}} \right)^{3}\]</div>
 <section id="spherical-bessel-function">
-<h3>Spherical Bessel function<a class="headerlink" href="#spherical-bessel-function" title="Permalink to this headline">#</a></h3>
+<h2>Spherical Bessel function<a class="headerlink" href="#spherical-bessel-function" title="Permalink to this headline">#</a></h2>
 <p>The spherical Bessel function of the first kind</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}  % DLMF 10.49.3
@@ -479,14 +513,25 @@ h_{m}(r)
     &amp;= j_{l-1}(z) - \frac{l+1}{z} j_{l}(z)
     \quad (l \geq 1)
     \quad (\mbox{DLMF 10.51.2}) \\\end{split}\]</div>
+<p>The spherical Bessel functions <span class="math notranslate nohighlight">\(\{ j_{l}(z_{ln} \frac{r}{r_{c}}) \}_{n=1,\dots}\)</span> form orthogonal basis on <span class="math notranslate nohighlight">\(r \in [0, r_{c}]\)</span>,</p>
+<div class="math notranslate nohighlight">
+\[  \int_{0}^{r_{c}}
+    j_{l}(z_{ln} \frac{r}{r_{c}}) j_{l}(z_{ln'} \frac{r}{r_{c}}) r^{2} dr
+  = \frac{r_{c}^{3}}{2} \left( j_{l+1}(z_{ln}) \right)^{2} \delta_{nn'}.\]</div>
+<p>Here <span class="math notranslate nohighlight">\(z_{ln}\)</span> is the <span class="math notranslate nohighlight">\(n\)</span>th root of <span class="math notranslate nohighlight">\(j_{l}\)</span>.
+We use
+uses normalized spherical Bessel functions <a class="footnote-reference brackets" href="#vasp" id="id2">1</a></p>
+<div class="math notranslate nohighlight">
+\[\begin{split}  \chi_{ln}(r)
+    &amp;= \sqrt{ \frac{2}{r_{c}^{3}} } \frac{ j_{l}(z_{ln}\frac{r}{r_{c}}) }{ |j_{l+1}(z_{ln})| } \\
+  \int_{0}^{r_{c}} \chi_{ln}(r) \chi_{ln'}(r) r^{2} dr
+    &amp;= \delta_{nn'}.\end{split}\]</div>
 </section>
 <section id="spherical-harmonics-with-m-0">
-<h3>Spherical harmonics with <span class="math notranslate nohighlight">\(m=0\)</span><a class="headerlink" href="#spherical-harmonics-with-m-0" title="Permalink to this headline">#</a></h3>
+<h2>Spherical harmonics with <span class="math notranslate nohighlight">\(m=0\)</span><a class="headerlink" href="#spherical-harmonics-with-m-0" title="Permalink to this headline">#</a></h2>
 <div class="math notranslate nohighlight">
 \[\begin{split}  Y_{l}^{0}(\theta)
-    &amp;= \sqrt{ \frac{2l+1}{4\pi} } P_{l}(\cos \theta) \\
-  \frac{d }{d \theta} Y_{l}^{0}(\theta)
-    &amp;= \sqrt{ \frac{2l+1}{4\pi} } \frac{d}{d \theta}  P_{l}(\cos \theta) \\\end{split}\]</div>
+    &amp;= \sqrt{ \frac{2l+1}{4\pi} } P_{l}(\cos \theta) \\\end{split}\]</div>
 <p>This definition adopts Condon-Shortley phase.</p>
 <p>Legendre polynomial (DLMF 14.10.3)</p>
 <div class="math notranslate nohighlight">
@@ -499,6 +544,29 @@ h_{m}(r)
   \frac{d}{d \theta} P_{n}^{(m)}(\cos \theta)
     &amp;= -\frac{1}{\sin \theta} \left( (n+m) P_{n-1}^{(m)}(\cos \theta) - n \cos \theta P_{n}^{(m)}(\cos \theta) \right) \\\end{split}\]</div>
 </section>
+<section id="three-body-to-bond">
+<h2>Three-body to bond<a class="headerlink" href="#three-body-to-bond" title="Permalink to this headline">#</a></h2>
+<div class="math notranslate nohighlight">
+\[\begin{split}  \tilde{\mathbf{v}_{i}}
+    &amp;= \mathcal{L}_{\sigma}(\mathbf{v}_{i}) \\
+  \tilde{e}_{ij}
+    &amp;= \sum_{k \in \mathcal{N}_{i} \backslash \{ j \} }
+          \left(
+              \chi_{ln}(r_{ik}) Y_{l}^{0}(\theta_{jik}) f_{3c}(r_{ij}) f_{3c}(r_{ik})
+          \right)_{l=0, \dots, l_{\max}-1, n=0, \dots, n_{\max}-1}
+          \odot
+          \tilde{\mathbf{v}}_{k} \\
+  \mathbf{e}_{ij}
+      &amp;\leftarrow \mathbf{e}_{ij}
+          + \mathcal{L}_{\mathrm{swish}}(\tilde{\mathbf{e}}_{ij}) \odot \mathcal{L}_{\mathrm{sigmoid}}(\tilde{\mathbf{e}}_{ij}) \\\end{split}\]</div>
+<p><span class="math notranslate nohighlight">\(\mathcal{L}_{\sigma}\)</span> is a one-layer perceptron with activation function <span class="math notranslate nohighlight">\(\sigma\)</span>.</p>
+<p>Cutoff function</p>
+<div class="math notranslate nohighlight">
+\[    f_{3c}(r)
+    = 1
+        - 6 \left( \frac{r}{r_{3c}} \right)^{5}
+        + 15 \left( \frac{r}{r_{3c}} \right)^{4}
+        - 10 \left( \frac{r}{r_{3c}} \right)^{3}\]</div>
 </section>
 <section id="graph-convolution">
 <h2>Graph Convolution<a class="headerlink" href="#graph-convolution" title="Permalink to this headline">#</a></h2>
@@ -518,10 +586,10 @@ h_{m}(r)
 <p>We first fit total energies in a training dataset from atom types <span class="math notranslate nohighlight">\(\{ t_{i} \}\)</span>.
 Then, we normalize the residual on the training dataset as</p>
 <div class="math notranslate nohighlight">
-\[  E(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}) - \sum_{i=1}^{N} E_{t_{i}}
-  = N \mu
-    + \sigma \tilde{E}_{\mathrm{M3GNet}}(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}),\]</div>
-<p>where <span class="math notranslate nohighlight">\(\mu = O(1), \sigma = O(1)\)</span> and <span class="math notranslate nohighlight">\(\tilde{E}_{\mathrm{M3GNet}}(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}) = O(N)\)</span>.</p>
+\[  E(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N})
+  = \sum_{i=1}^{N} E_{t_{i}}
+    + \tilde{E}_{\mathrm{M3GNet}}(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}),\]</div>
+<p>where <span class="math notranslate nohighlight">\(\tilde{E}_{\mathrm{M3GNet}}(\mathbf{A}, \{ \mathbf{r}_{i} \}_{i=1}^{N}, \{ t_{i} \}_{i=1}^{N}) = O(N)\)</span>.</p>
 </section>
 <section id="loss-function">
 <h2>Loss function<a class="headerlink" href="#loss-function" title="Permalink to this headline">#</a></h2>
@@ -535,28 +603,38 @@ Then, we normalize the residual on the training dataset as</p>
     \right)
   \right|^{2} \\
 l_{F} &amp;=
-\frac{1}{3 n_{\mathrm{train}}}
-\sum_{n=1}^{n_{\mathrm{train}}} \sum_{\alpha=1}^{3}
-  \left|
-    F_{\alpha}(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - F_{\alpha}^{(n)}
-  \right|^{2} \\
-l_{S} &amp;=
-\frac{1}{6 n_{\mathrm{train}}}
-\sum_{n=1}^{n_{\mathrm{train}}} \sum_{p=1}^{6}
-  \left|
-    \sigma_{p}(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - \sigma_{p}^{(n)}
-  \right|^{2} \\
+\frac{1}{ \sum_{n=1}^{n_{\mathrm{train}}} N^{(n)} }
+\sum_{n=1}^{n_{\mathrm{train}}}
+  \sum_{j=1}^{N^{(n)}} \sum_{\alpha=1}^{3}
+    \left|
+      F_{j\alpha}(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - F_{j \alpha}^{(n)}
+    \right|^{2} \\
+  l_{S} &amp;=
+  \frac{1}{6 n_{\mathrm{train}}}
+  \sum_{n=1}^{n_{\mathrm{train}}} \sum_{p=1}^{6}
+    \left|
+      \sigma_{p}(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - \sigma_{p}^{(n)}
+    \right|^{2} \\
 l &amp;= l_{E} + w_{F} l_{F} + w_{S} l_{S} \\\end{split}\]</div>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">#</a></h2>
-<div class="docutils container" id="id2">
+<div class="docutils container" id="id3">
 <dl class="citation">
-<dt class="label" id="id6"><span class="brackets"><a class="fn-backref" href="#id1">KME19</a></span></dt>
+<dt class="label" id="id11"><span class="brackets"><a class="fn-backref" href="#id12">JKK19</a></span></dt>
+<dd><p>Ryosuke Jinnouchi, Ferenc Karsai, and Georg Kresse. On-the-fly machine learning force field generation: application to melting points. <em>Phys. Rev. B</em>, 100:014105, Jul 2019. URL: <a class="reference external" href="https://link.aps.org/doi/10.1103/PhysRevB.100.014105">https://link.aps.org/doi/10.1103/PhysRevB.100.014105</a>, <a class="reference external" href="https://doi.org/10.1103/PhysRevB.100.014105">doi:10.1103/PhysRevB.100.014105</a>.</p>
+</dd>
+<dt class="label" id="id7"><span class="brackets"><a class="fn-backref" href="#id1">KME19</a></span></dt>
 <dd><p>Emir Kocer, Jeremy K. Mason, and Hakan Erturk. A novel approach to describe chemical environments in high-dimensional neural network potentials. <em>The Journal of Chemical Physics</em>, 150(15):154102, 2019. URL: <a class="reference external" href="https://doi.org/10.1063/1.5086167">https://doi.org/10.1063/1.5086167</a>, <a class="reference external" href="https://doi.org/10.1063/1.5086167">doi:10.1063/1.5086167</a>.</p>
 </dd>
 </dl>
 </div>
+<hr class="footnotes docutils" />
+<dl class="footnote brackets">
+<dt class="label" id="vasp"><span class="brackets"><a class="fn-backref" href="#id2">1</a></span></dt>
+<dd><p>The normalization constant is slightly different from that of VASP 6.0 <span id="id12">[<a class="reference internal" href="references.html#id12" title="Ryosuke Jinnouchi, Ferenc Karsai, and Georg Kresse. On-the-fly machine learning force field generation: application to melting points. Phys. Rev. B, 100:014105, Jul 2019. URL: https://link.aps.org/doi/10.1103/PhysRevB.100.014105, doi:10.1103/PhysRevB.100.014105.">JKK19</a>]</span>.</p>
+</dd>
+</dl>
 </section>
 </section>
 

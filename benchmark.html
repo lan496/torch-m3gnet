@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Benchmark &#8212; torch-m3gnet 0.1.dev43+g70976d6</title>
+    <title>Benchmark &#8212; torch-m3gnet 0.1.dev61+g4e4539a</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -73,7 +73,7 @@
       
       
       
-      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev43+g70976d6</h1>
+      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev61+g4e4539a</h1>
       
     </a>
 </div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
@@ -332,23 +332,19 @@ python scripts/load_mlearn_dataset.py --raw_datadir datasets/mlearn/data --eleme
 python scripts/load_mlearn_dataset.py --raw_datadir datasets/mlearn/data --element Cu --config_path configs/mlearn_Cu.yaml --device cuda --num_workers <span class="m">1</span>
 </pre></div>
 </div>
-<p>TODO: reproduce Table. 1</p>
 </section>
 <section id="mpf-2021-2-8">
 <h2>MPF.2021.2.8<a class="headerlink" href="#mpf-2021-2-8" title="Permalink to this headline">#</a></h2>
 <p><a class="reference external" href="https://figshare.com/articles/dataset/MPF_2021_2_8/19470599">https://figshare.com/articles/dataset/MPF_2021_2_8/19470599</a></p>
-<p>Figure 3</p>
-<ul class="simple">
-<li><p>Energy</p></li>
-<li><p>Forces</p></li>
-<li><p>Stress</p></li>
-<li><p>Phonon density of state</p></li>
-<li><p>Debye temperature</p></li>
-</ul>
-<p>Figure 4</p>
-<ul class="simple">
-<li><p>Relaxatation of crystal structures in test dataset</p></li>
-</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git clone git@github.com:materialsvirtuallab/mlearn.git datasets/
+
+<span class="c1"># CPU</span>
+python scripts/load_mpf_dataset.py --raw_datadir datasets/ --config_path configs/mpf.yaml --num_workers <span class="m">1</span>
+
+<span class="c1"># GPU</span>
+python scripts/load_mpf_dataset.py --raw_datadir datasets/ --config_path configs/mpf.yaml --device cuda --num_workers <span class="m">1</span>
+</pre></div>
+</div>
 </section>
 <section id="phonon-dispersion-curve">
 <h2>Phonon dispersion curve<a class="headerlink" href="#phonon-dispersion-curve" title="Permalink to this headline">#</a></h2>
