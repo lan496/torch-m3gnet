@@ -230,9 +230,7 @@ def train_model(
         train, batch_size=config.batch_size, shuffle=False, num_workers=num_workers
     )
 
-    elemental_energies, energy_scale = fit_elemental_energies(
-        train, config.num_types
-    )
+    elemental_energies, energy_scale = fit_elemental_energies(train, config.num_types)
 
     # Model
     litmodel = LitM3GNet(
