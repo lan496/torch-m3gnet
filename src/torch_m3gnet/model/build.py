@@ -22,8 +22,7 @@ def build_model(
     embedding_dim: int,
     num_blocks: int,
     elemental_energies: TensorType["num_types"] | None = None,  # type: ignore # noqa: F821
-    energy_mean: float = 0.0,  # eV/atom
-    energy_scale: float = 1.0,  # eV/atom
+    energy_scale: float = 1.0,  # eV
     length_scale: float = 1.0,  # AA
     device: torch.device | None = None,
 ) -> torch.nn.Sequential:
@@ -71,7 +70,6 @@ def build_model(
         AtomWiseReadout(
             in_features=embedding_dim,
             num_layers=3,
-            mean=energy_mean,
             scale=energy_scale,
             device=device,
         )

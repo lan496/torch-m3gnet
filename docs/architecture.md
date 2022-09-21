@@ -221,9 +221,8 @@ l_{E} &=
     \right)
   \right|^{2} \\
 l_{F} &=
-\frac{1}{n_{\mathrm{train}}}
+\frac{1}{ \sum_{n=1}^{n_{\mathrm{train}}} N^{(n)} }
 \sum_{n=1}^{n_{\mathrm{train}}}
-  \frac{1}{3N^{(n)}}
   \sum_{j=1}^{N^{(n)}} \sum_{\alpha=1}^{3}
     \left|
       F_{j\alpha}(\mathbf{A}^{(n)}, \{ \mathbf{r}^{(n)}_{i} \}, \{ t^{(n)}_{i} \}) - F_{j \alpha}^{(n)}

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 
+import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
@@ -28,7 +29,6 @@ class LitM3GNet(pl.LightningModule):
         self,
         config: RunConfig,
         elemental_energies: list[float] | None = None,
-        energy_mean: float = 0.0,
         energy_scale: float = 1.0,
         length_scale: float = 1.0,
         device: str | None = None,
@@ -39,7 +39,6 @@ class LitM3GNet(pl.LightningModule):
         hparams = {}
         hparams["config"] = config
         hparams["elemental_energies"] = elemental_energies  # type: ignore
-        hparams["energy_mean"] = energy_mean  # type: ignore
         hparams["energy_scale"] = energy_scale  # type: ignore
         hparams["length_scale"] = length_scale  # type: ignore
         hparams["device"] = device  # type: ignore
@@ -61,7 +60,6 @@ class LitM3GNet(pl.LightningModule):
             embedding_dim=config.embedding_dim,
             num_blocks=config.num_blocks,
             elemental_energies=elemental_energies_tensor,
-            energy_mean=energy_mean,
             energy_scale=energy_scale,
             length_scale=length_scale,
             device=device,
@@ -128,16 +126,14 @@ class LitM3GNet(pl.LightningModule):
             index=graph[MaterialGraphKey.BATCH],
             dim_size=batch_size,
         )
-        target_energy = graph[MaterialGraphKey.TOTAL_ENERGY].clone()
-        target_energy_per_atom = target_energy / num_nodes_per_graph
+        target_energy_per_atom = graph[MaterialGraphKey.TOTAL_ENERGY].clone() / num_nodes_per_graph
         target_forces = graph[MaterialGraphKey.FORCES].clone()
         target_stresses = graph[MaterialGraphKey.STRESSES].clone()
 
         # Forward
         graph = self(graph)
 
-        predicted_energy = graph[MaterialGraphKey.TOTAL_ENERGY]
-        predicted_energy_per_atom = predicted_energy / num_nodes_per_graph
+        predicted_energy_per_atom = graph[MaterialGraphKey.TOTAL_ENERGY] / num_nodes_per_graph
         predicted_forces = graph[MaterialGraphKey.FORCES]
         predicted_stresses = graph[MaterialGraphKey.STRESSES]
 
@@ -145,12 +141,7 @@ class LitM3GNet(pl.LightningModule):
         energy_loss = F.mse_loss(
             predicted_energy_per_atom, target_energy_per_atom, reduction="mean"
         )  # eV/atom
-        forces_diff: TensorType["batch_size"] = scatter_sum(  # type: ignore # noqa: F821
-            torch.sum(torch.square(predicted_forces - target_forces), dim=1),
-            index=graph[MaterialGraphKey.BATCH],
-            dim_size=batch_size,
-        )
-        forces_loss = torch.sum(forces_diff / num_nodes_per_graph) / (3 * batch_size)  # eV/AA
+        forces_loss = F.mse_loss(predicted_forces, target_forces, reduction="mean")  # eV/AA
         stresses_loss = F.mse_loss(
             predicted_stresses, target_stresses, reduction="mean"
         )  # eV/AA^3
@@ -165,7 +156,7 @@ class LitM3GNet(pl.LightningModule):
             "energy_loss": energy_loss,
             "forces_loss": forces_loss,
             "stresses_loss": stresses_loss,
-            "energy_rmse": torch.sqrt(self.mse(predicted_energy_per_atom, target_energy_per_atom)),
+            "energy_rmse": torch.sqrt(energy_loss),
             "forces_rmse": torch.sqrt(forces_loss),
             "stresses_rmse": torch.sqrt(stresses_loss),
             "energy_mae": self.mae(predicted_energy_per_atom, target_energy_per_atom),
@@ -239,14 +230,15 @@ def train_model(
         train, batch_size=config.batch_size, shuffle=False, num_workers=num_workers
     )
 
-    elemental_energies = fit_elemental_energies(train, config.num_types)
+    elemental_energies, energy_scale = fit_elemental_energies(
+        train, config.num_types
+    )
 
     # Model
     litmodel = LitM3GNet(
         config=config,
         elemental_energies=elemental_energies,
-        # energy_mean=energy_mean,
-        # energy_scale=energy_scale,
+        energy_scale=energy_scale,
         # length_scale=length_scale,
         device=device,
     )
@@ -269,6 +261,7 @@ def train_model(
                 LearningRateMonitor(logging_interval="epoch"),
             ],
             max_epochs=config.max_epochs,
+            # https://github.com/Lightning-AI/lightning/discussions/7332
             reload_dataloaders_every_n_epochs=1,  # shuffle train for each epoch
             accumulate_grad_batches=config.accumulate_grad_batches,
             logger=logger,
@@ -331,7 +324,7 @@ def get_accelerator(device: str | torch.device | None) -> str:
 def fit_elemental_energies(
     dataset: MaterialGraphDataset,
     num_types: int,
-) -> list[float]:
+) -> tuple[list[float], float]:
     X_all = []
     for graph in dataset:
         one_hot = torch.nn.functional.one_hot(graph[MaterialGraphKey.ATOM_TYPES], num_types)
@@ -341,9 +334,10 @@ def fit_elemental_energies(
     reg = LinearRegression(fit_intercept=False).fit(X_all, y_all)
     elemental_energies = reg.coef_.tolist()  # eV/atom
 
-    # y_pred = reg.predict(X_all)  # eV
-    # energy_scale = float(np.mean((y_pred - y_all) ** 2))  # eV/atom
-    # forces = dataset.data[MaterialGraphKey.FORCES]
-    # length_scale = energy_scale / torch.sqrt(torch.mean(torch.square(forces))).item()  # AA
+    y_pred = reg.predict(X_all)  # eV
+    energy_scale = float(np.std(y_pred - y_all))
 
-    return elemental_energies
+    # forces = dataset.data[MaterialGraphKey.FORCES]
+    # length_scale = energy_scale / torch.std(forces).item()  # AA
+
+    return elemental_energies, energy_scale
