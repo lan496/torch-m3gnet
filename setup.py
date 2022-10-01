@@ -28,7 +28,7 @@ REQUIRED = [
 EXTRAS = {
     "dev": [
         "pytest",
-        "pytest-cov==3.0.0",
+        "pytest-cov==4.0.0",
         "typeguard==2.13.3",
         "pre-commit",
         "black",
