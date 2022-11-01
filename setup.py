@@ -14,7 +14,7 @@ REQUIRED = [
     # Trouble in enabling grad in evaluation since 1.7.0
     # Now now, use 1.6.x until the following issue is closed.
     # https://github.com/Lightning-AI/lightning/issues/13948
-    "pytorch-lightning<1.7",
+    "pytorch-lightning<1.9",
     "torch-scatter",
     "torch-sparse",
     "torch-geometric",
