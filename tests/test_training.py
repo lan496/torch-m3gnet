@@ -37,6 +37,7 @@ def test_training(
         accelerator=accelerator,
         devices=1,
         overfit_batches=1,  # Overfit to single batch for testing
+        inference_mode=False,  # Not to use torch.no_grad() in inference
     )
 
     trainer.fit(
