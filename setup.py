@@ -11,16 +11,14 @@ REQUIRED = [
     "typing_extensions",
     "torchtyping==0.1.4",
     "torch",
-    # Trouble in enabling grad in evaluation since 1.7.0
-    # Now now, use 1.6.x until the following issue is closed.
-    # https://github.com/Lightning-AI/lightning/issues/13948
-    "pytorch-lightning<1.7",
+    # Trouble in enabling grad in evaluation at pytorch-lightning==1.7.x
+    "pytorch-lightning>=1.8",
     "torch-scatter",
     "torch-sparse",
     "torch-geometric",
     "torchmetrics",
     "pymatgen>=2022.7.25",
-    "ruamel.yaml",  # TODO: use hydra
+    "ruamel.yaml",
     "joblib",
     "scikit-learn",
 ]
