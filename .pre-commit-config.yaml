@@ -29,13 +29,13 @@ repos:
       exclude: ^docs/
   # isort
   - repo: https://github.com/pycqa/isort
-    rev: v5.11.3
+    rev: 5.11.4
     hooks:
       - id: isort
         name: isort (python)
         args: ["--profile", "black"]
   # Notebook
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.5.3
+    rev: 1.6.0
     hooks:
       - id: nbqa-black
