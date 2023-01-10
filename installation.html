@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Installation &#8212; torch-m3gnet 0.1.dev85+g4aeb853</title>
+    <title>Installation &#8212; torch-m3gnet 0.1.dev87+gf950861</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -73,7 +73,7 @@
       
       
       
-      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev85+g4aeb853</h1>
+      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev87+gf950861</h1>
       
     </a>
 </div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
@@ -338,49 +338,49 @@ title="Print to PDF"
 <h2>Local<a class="headerlink" href="#local" title="Permalink to this headline">#</a></h2>
 <section id="pytorch-1-12">
 <h3>PyTorch 1.12<a class="headerlink" href="#pytorch-1-12" title="Permalink to this headline">#</a></h3>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>conda create -n m3gnet <span class="nv">python</span><span class="o">=</span><span class="m">3</span>.10 pip
-conda activate m3gnet
-python -m pip install <span class="nv">torch</span><span class="o">==</span><span class="m">1</span>.12.0 --extra-index-url https://download.pytorch.org/whl/cpu
-python -m pip install torch-scatter torch-sparse torch-cluster torch-spline-conv torch-geometric -f https://data.pyg.org/whl/torch-1.12.0+cpu.html
-pip install -e <span class="s2">&quot;.[dev,docs]&quot;</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>m3gnet<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.10<span class="w"> </span>pip
+conda<span class="w"> </span>activate<span class="w"> </span>m3gnet
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="nv">torch</span><span class="o">==</span><span class="m">1</span>.12.0<span class="w"> </span>--extra-index-url<span class="w"> </span>https://download.pytorch.org/whl/cpu
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>torch-scatter<span class="w"> </span>torch-sparse<span class="w"> </span>torch-cluster<span class="w"> </span>torch-spline-conv<span class="w"> </span>torch-geometric<span class="w"> </span>-f<span class="w"> </span>https://data.pyg.org/whl/torch-1.12.0+cpu.html
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,docs]&quot;</span>
 </pre></div>
 </div>
 </section>
 </section>
 <section id="gpu-container-docker-w-pytorch">
 <h2>GPU container (docker, w/ pytorch)<a class="headerlink" href="#gpu-container-docker-w-pytorch" title="Permalink to this headline">#</a></h2>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker build --build-arg <span class="nv">UID</span><span class="o">=</span><span class="k">$(</span>id -u<span class="k">)</span> --build-arg <span class="nv">GID</span><span class="o">=</span><span class="k">$(</span>id -g<span class="k">)</span> -t m3gnet -f containers/Dockerfile .
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>build<span class="w"> </span>--build-arg<span class="w"> </span><span class="nv">UID</span><span class="o">=</span><span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span><span class="w"> </span>--build-arg<span class="w"> </span><span class="nv">GID</span><span class="o">=</span><span class="k">$(</span>id<span class="w"> </span>-g<span class="k">)</span><span class="w"> </span>-t<span class="w"> </span>m3gnet<span class="w"> </span>-f<span class="w"> </span>containers/Dockerfile<span class="w"> </span>.
 
-docker run --gpus all -it  -v <span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/app -p <span class="m">6006</span>:6006 --name m3gnet m3gnet
+docker<span class="w"> </span>run<span class="w"> </span>--gpus<span class="w"> </span>all<span class="w"> </span>-it<span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/app<span class="w"> </span>-p<span class="w"> </span><span class="m">6006</span>:6006<span class="w"> </span>--name<span class="w"> </span>m3gnet<span class="w"> </span>m3gnet
 <span class="c1"># Specify GPU</span>
 <span class="c1"># docker run --gpus &#39;&quot;device=1&quot;&#39; -it  -v $(pwd):/app --name m3gnet</span>
 
 <span class="c1"># In container</span>
-pip install -e <span class="s2">&quot;.[dev]&quot;</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span>
 
 <span class="c1"># Checking</span>
-python -c <span class="s2">&quot;import torch; print(torch.__version__); print(torch.cuda.is_available())&quot;</span>
-python -c <span class="s2">&quot;import torch; print(torch.version.cuda)&quot;</span>
-python -c <span class="s2">&quot;import torch_scatter&quot;</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import torch; print(torch.__version__); print(torch.cuda.is_available())&quot;</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import torch; print(torch.version.cuda)&quot;</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import torch_scatter&quot;</span>
 </pre></div>
 </div>
 </section>
 <section id="gpu-container-singularity-w-pytorch">
 <h2>GPU container (singularity, w/ pytorch)<a class="headerlink" href="#gpu-container-singularity-w-pytorch" title="Permalink to this headline">#</a></h2>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>singularity build --fakeroot pytorch.sif containers/m3gnet_pytorch.def
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>singularity<span class="w"> </span>build<span class="w"> </span>--fakeroot<span class="w"> </span>pytorch.sif<span class="w"> </span>containers/m3gnet_pytorch.def
 <span class="c1"># sudo singularity build --sandbox pytorch.sif containers/m3gnet_pytorch.def</span>
-singularity run --nv pytorch.sif
+singularity<span class="w"> </span>run<span class="w"> </span>--nv<span class="w"> </span>pytorch.sif
 
 <span class="c1"># In container</span>
-pip install -e <span class="s2">&quot;.[dev]&quot;</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span>
 </pre></div>
 </div>
 </section>
 <section id="gpu-container-for-original-m3gnet-package-w-tensorflow">
 <h2>GPU container for original M3GNet package (w/ tensorflow)<a class="headerlink" href="#gpu-container-for-original-m3gnet-package-w-tensorflow" title="Permalink to this headline">#</a></h2>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>singularity build --fakeroot tensorflow.sif containers/m3gnet_tensorflow.def
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>singularity<span class="w"> </span>build<span class="w"> </span>--fakeroot<span class="w"> </span>tensorflow.sif<span class="w"> </span>containers/m3gnet_tensorflow.def
 <span class="c1"># sudo singularity build --sandbox tensorflow.sif containers/m3gnet_tensorflow.def</span>
-singularity run --nv tensorflow.sif
+singularity<span class="w"> </span>run<span class="w"> </span>--nv<span class="w"> </span>tensorflow.sif
 </pre></div>
 </div>
 </section>

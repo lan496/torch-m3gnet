@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Benchmark &#8212; torch-m3gnet 0.1.dev85+g4aeb853</title>
+    <title>Benchmark &#8212; torch-m3gnet 0.1.dev87+gf950861</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -73,7 +73,7 @@
       
       
       
-      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev85+g4aeb853</h1>
+      <h1 class="site-logo" id="site-title">torch-m3gnet 0.1.dev87+gf950861</h1>
       
     </a>
 </div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
@@ -323,26 +323,26 @@ title="Print to PDF"
 <section id="iap-datasets">
 <h2>IAP datasets<a class="headerlink" href="#iap-datasets" title="Permalink to this headline">#</a></h2>
 <p><span id="id1">[<a class="reference internal" href="references.html#id11" title="Yunxing Zuo, Chi Chen, Xiangguo Li, Zhi Deng, Yiming Chen, Jörg Behler, Gábor Csányi, Alexander V. Shapeev, Aidan P. Thompson, Mitchell A. Wood, and Shyue Ping Ong. Performance and cost assessment of machine learning interatomic potentials. The Journal of Physical Chemistry A, 124(4):731-745, 2020. PMID: 31916773. URL: https://doi.org/10.1021/acs.jpca.9b08723, doi:10.1021/acs.jpca.9b08723.">ZCL+20</a>]</span></p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git clone git@github.com:materialsvirtuallab/mlearn.git datasets/
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:materialsvirtuallab/mlearn.git<span class="w"> </span>datasets/
 
 <span class="c1"># CPU</span>
-python scripts/load_mlearn_dataset.py --raw_datadir datasets/mlearn/data --element Cu --config_path configs/mlearn_Cu.yaml --num_workers <span class="m">1</span>
+python<span class="w"> </span>scripts/load_mlearn_dataset.py<span class="w"> </span>--raw_datadir<span class="w"> </span>datasets/mlearn/data<span class="w"> </span>--element<span class="w"> </span>Cu<span class="w"> </span>--config_path<span class="w"> </span>configs/mlearn_Cu.yaml<span class="w"> </span>--num_workers<span class="w"> </span><span class="m">1</span>
 
 <span class="c1"># GPU</span>
-python scripts/load_mlearn_dataset.py --raw_datadir datasets/mlearn/data --element Cu --config_path configs/mlearn_Cu.yaml --device cuda --num_workers <span class="m">1</span>
+python<span class="w"> </span>scripts/load_mlearn_dataset.py<span class="w"> </span>--raw_datadir<span class="w"> </span>datasets/mlearn/data<span class="w"> </span>--element<span class="w"> </span>Cu<span class="w"> </span>--config_path<span class="w"> </span>configs/mlearn_Cu.yaml<span class="w"> </span>--device<span class="w"> </span>cuda<span class="w"> </span>--num_workers<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 </section>
 <section id="mpf-2021-2-8">
 <h2>MPF.2021.2.8<a class="headerlink" href="#mpf-2021-2-8" title="Permalink to this headline">#</a></h2>
 <p><a class="reference external" href="https://figshare.com/articles/dataset/MPF_2021_2_8/19470599">https://figshare.com/articles/dataset/MPF_2021_2_8/19470599</a></p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git clone git@github.com:materialsvirtuallab/mlearn.git datasets/
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:materialsvirtuallab/mlearn.git<span class="w"> </span>datasets/
 
 <span class="c1"># CPU</span>
-python scripts/load_mpf_dataset.py --raw_datadir datasets/ --config_path configs/mpf.yaml --num_workers <span class="m">1</span>
+python<span class="w"> </span>scripts/load_mpf_dataset.py<span class="w"> </span>--raw_datadir<span class="w"> </span>datasets/<span class="w"> </span>--config_path<span class="w"> </span>configs/mpf.yaml<span class="w"> </span>--num_workers<span class="w"> </span><span class="m">1</span>
 
 <span class="c1"># GPU</span>
-python scripts/load_mpf_dataset.py --raw_datadir datasets/ --config_path configs/mpf.yaml --device cuda --num_workers <span class="m">1</span>
+python<span class="w"> </span>scripts/load_mpf_dataset.py<span class="w"> </span>--raw_datadir<span class="w"> </span>datasets/<span class="w"> </span>--config_path<span class="w"> </span>configs/mpf.yaml<span class="w"> </span>--device<span class="w"> </span>cuda<span class="w"> </span>--num_workers<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 </section>
