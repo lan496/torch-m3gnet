@@ -176,7 +176,9 @@ class LitM3GNet(pl.LightningModule):
             T_max=self.config.decay_steps,
             eta_min=self.config.learning_rate * self.config.decay_alpha,
         )
-        return [optimizer,], [
+        return [
+            optimizer,
+        ], [
             scheduler,
         ]
 
