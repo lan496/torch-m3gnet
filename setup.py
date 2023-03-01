@@ -12,7 +12,7 @@ REQUIRED = [
     "torchtyping==0.1.4",
     "torch",
     # Trouble in enabling grad in evaluation at pytorch-lightning==1.7.x
-    "pytorch-lightning==1.8.6",
+    "pytorch-lightning==1.9.3",
     "torch-scatter",
     "torch-sparse",
     "torch-geometric",
