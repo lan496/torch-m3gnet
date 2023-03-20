@@ -36,6 +36,6 @@ repos:
         args: ["--profile", "black"]
   # Notebook
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.6.3
+    rev: 1.6.4
     hooks:
       - id: nbqa-black
