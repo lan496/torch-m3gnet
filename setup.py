@@ -27,7 +27,7 @@ EXTRAS = {
     "dev": [
         "pytest",
         "pytest-cov==4.0.0",
-        "typeguard==2.13.3",
+        "typeguard==3.0.2",
         "pre-commit",
         "black",
         "mypy",
