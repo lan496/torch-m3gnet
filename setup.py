@@ -15,7 +15,7 @@ REQUIRED = [
     "pytorch-lightning==1.8.6",
     "torch-scatter",
     "torch-sparse",
-    "torch-geometric",
+    "torch-geometric==1.7.2",
     "torchmetrics",
     "pymatgen>=2022.7.25",
     "ruamel.yaml",
