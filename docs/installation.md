@@ -7,8 +7,9 @@
 ```shell
 conda create -n m3gnet python=3.10 pip
 conda activate m3gnet
-python -m pip install torch==1.12.0 --extra-index-url https://download.pytorch.org/whl/cpu
-python -m pip install torch-scatter torch-sparse torch-cluster torch-spline-conv torch-geometric -f https://data.pyg.org/whl/torch-1.12.0+cpu.html
+conda install -c conda-forge compilers
+python -m pip install "torch==1.12.0" --extra-index-url https://download.pytorch.org/whl/cpu
+python -m pip install torch-scatter torch-sparse "torch-geometric==2.2.0" -f https://data.pyg.org/whl/torch-1.12.0+cpu.html
 pip install -e ".[dev,docs]"
 ```
 
