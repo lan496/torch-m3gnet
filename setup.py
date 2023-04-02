@@ -42,12 +42,15 @@ EXTRAS = {
         "seaborn",
     ],
     "docs": [
-        "sphinx",
+        # We cannot update sphinx to >6 until docutils==0.20 is released: https://github.com/mcmtroffaes/sphinxcontrib-bibtex/issues/322
+        "docutils==0.17",
+        "sphinx<6",
         "sphinx-autobuild",
         # "nbsphinx",
         "sphinxcontrib-bibtex",
         "myst-parser",
         "sphinx-book-theme",
+        "linkify-it-py",
     ],
 }
 
